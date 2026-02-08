@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Engine Explainer Chatbot Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Simulated Google Search Page */
+        .search-page {
+            flex: 1;
+            background: #fff;
+            overflow-y: auto;
+            padding: 20px;
+            border-right: 1px solid #dadce0;
+        }
+
+        .search-header {
+            max-width: 652px;
+            margin: 0 auto 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .search-stats {
+            color: #70757a;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            max-width: 652px;
+            margin: 0 auto;
+        }
+
+        .result {
+            margin-bottom: 32px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .result:hover {
+            background: #f8f9fa;
+        }
+
+        .result.highlighted {
+            background: #e8f0fe;
+            border-left: 3px solid #1a73e8;
+            padding-left: 13px;
+        }
+
+        .result-url {
+            font-size: 14px;
+            color: #202124;
+            margin-bottom: 3px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            color: #1a0dab;
+            margin-bottom: 3px;
+            line-height: 1.3;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-snippet {
+            font-size: 14px;
+            color: #4d5156;
+            line-height: 1.58;
+        }
+
+        .result-badge {
+            display: inline-block;
+            background: #1a73e8;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        /* Chatbot Side Panel */
+        .chatbot-panel {
+            width: 400px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        }
+
+        .chatbot-header {
+            background: #1a73e8;
+            color: white;
+            padding: 16px;
+            font-weight: 500;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chatbot-icon {
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .message.bot .message-avatar {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #34a853;
+            color: white;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 80%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message.user .message-content {
+            background: #e8f0fe;
+        }
+
+        .message-content strong {
+            color: #1a73e8;
+        }
+
+        .message-content code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .message-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin: 4px 0;
+        }
+
+        .quick-actions {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid #dadce0;
+        }
+
+        .quick-actions-title {
+            font-size: 12px;
+            color: #5f6368;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .quick-action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .quick-action-btn {
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action-btn:hover {
+            background: #e8f0fe;
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+
+        .chat-input-container {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #dadce0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #dadce0;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-input input:focus {
+            border-color: #1a73e8;
+        }
+
+        .chat-input button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .chat-input button:hover {
+            background: #1557b0;
+        }
+
+        .chat-input button:disabled {
+            background: #dadce0;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #5f6368;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .highlight-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            border: 2px solid #1a73e8;
+            border-radius: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .metric-tag {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Simulated Google Search Page -->
+        <div class="search-page">
+            <div class="search-header">
+                <div class="search-box">
+                    <input type="text" value="what illness does stomach pain indicate?" readonly>
+                </div>
+                <div class="search-stats">About 156,000,000 results (0.38 seconds)</div>
+            </div>
+            
+            <div class="search-results">
+                <div class="result" data-result="1">
+                    <div class="result-url">https://www.mayoclinic.org › symptoms › abdominal-pain</div>
+                    <div class="result-title">Abdominal Pain: Causes, Types & Treatment - Mayo Clinic<span class="result-badge">MEDICAL</span></div>
+                    <div class="result-snippet">Abdominal pain can have many causes. Most are not serious. Learn when to see a doctor, what treatment options exist, and when stomach pain might signal a serious condition requiring immediate care...</div>
+                </div>
+
+                <div class="result" data-result="2">
+                    <div class="result-url">https://www.healthline.com › health › abdominal-pain</div>
+                    <div class="result-title">Stomach Pain: 27 Possible Causes and When to See a Doctor</div>
+                    <div class="result-snippet">Stomach pain has many possible causes, from gas and indigestion to more serious conditions. This guide covers common causes, accompanying symptoms to watch for, and when medical attention is needed...</div>
+                </div>
+
+                <div class="result" data-result="3">
+                    <div class="result-url">https://www.webmd.com › digestive-disorders › abdominal-pain</div>
+                    <div class="result-title">Abdominal Pain: Causes & When to Be Concerned - WebMD</div>
+                    <div class="result-snippet">Learn about the many causes of abdominal pain, from mild conditions like gas to serious issues requiring emergency care. Find out what your symptoms mean and when to call your doctor...</div>
+                </div>
+
+                <div class="result" data-result="4">
+                    <div class="result-url">https://www.nhs.uk › conditions › stomach-ache</div>
+                    <div class="result-title">Stomach ache - NHS</div>
+                    <div class="result-snippet">Most stomach aches are not serious and will go away after a few days. Find out about the possible causes and when you should see a GP. Includes guidance on self-care and warning signs...</div>
+                </div>
+
+                <div class="result" data-result="5">
+                    <div class="result-url">https://my.clevelandclinic.org › health › symptoms</div>
+                    <div class="result-title">Abdominal Pain: Causes and When to See a Healthcare Provider</div>
+                    <div class="result-snippet">Abdominal pain is common and usually not serious. However, some types of stomach pain can signal serious health problems. Learn how to identify concerning symptoms and when to seek care...</div>
+                </div>
+
+                <div class="result" data-result="6">
+                    <div class="result-url">https://www.reddit.com › r › AskDocs</div>
+                    <div class="result-title">Severe stomach pain for 3 days, what could it be? : r/AskDocs</div>
+                    <div class="result-snippet">I've had severe stomach pain on my right side for 3 days now. Could this be appendicitis? Should I go to ER? [Comments: 47] Update: Went to ER, it was appendicitis...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatbot Side Panel -->
+        <div class="chatbot-panel">
+            <div class="chatbot-header">
+                <div class="chatbot-icon">🔍</div>
+                Search Explainer
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Hi! I can see you're searching for health information about stomach pain. Before you read these results, let me help you understand a few important things:
+                        <br><br>
+                        ⚠️ <strong>These are general information pages, not personal medical advice</strong>
+                        <br><br>
+                        🔍 The search engine found these results by matching your words with web pages, but it doesn't know YOUR specific situation
+                        <br><br>
+                        💡 <strong>I can help you:</strong><br>
+                        • Understand how these results were chosen<br>
+                        • Learn which sources are more trustworthy<br>
+                        • Know what to watch out for<br>
+                        • Decide if you should see a doctor
+                        <br><br>
+                        Click on any result to learn more, or ask me a question!
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <div class="quick-actions-title">Questions I Can Help With:</div>
+                <div class="quick-action-buttons">
+                    <button class="quick-action-btn" data-question="Which sources can I trust?">Which sources to trust?</button>
+                    <button class="quick-action-btn" data-question="Should I see a doctor?">Should I see a doctor?</button>
+                    <button class="quick-action-btn" data-question="Why do I see these results?">Why these results?</button>
+                    <button class="quick-action-btn" data-question="What to watch out for?">What to watch out for?</button>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input">
+                    <input type="text" id="userInput" placeholder="Ask about these search results...">
+                    <button id="sendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const results = document.querySelectorAll('.result');
+        const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+
+        // Predefined responses for demo
+        const responses = {
+            "Which sources can I trust?": {
+                text: `Great question! Let me help you understand which results are more trustworthy:
+
+<strong>✅ MOST TRUSTWORTHY (Results #1, 4, 5):</strong>
+
+<span class="metric-tag">Mayo Clinic</span> <span class="metric-tag">NHS</span> <span class="metric-tag">Cleveland Clinic</span>
+
+These are official medical organizations:
+• Written by doctors and medical professionals
+• Information is reviewed by experts
+• Updated regularly with current medical knowledge
+• No advertising or products to sell
+
+<strong>⚠️ USE WITH CAUTION (Results #2, 3):</strong>
+
+<span class="metric-tag">Healthline</span> <span class="metric-tag">WebMD</span>
+
+These are commercial health websites:
+• Generally accurate but have advertising
+• May emphasize dramatic symptoms to keep you reading
+• Mix expert information with sponsored content
+• Good for general learning, but verify with official sources
+
+<strong>❌ BE VERY CAREFUL (Result #6):</strong>
+
+<span class="metric-tag">Reddit/Forums</span>
+
+This is people sharing personal experiences:
+• NOT written by medical professionals
+• One person's experience may not apply to you
+• Can spread misinformation or cause unnecessary worry
+• Never use forums to diagnose yourself
+
+<strong>💡 Simple Rule:</strong>
+Start with official medical sites (Mayo Clinic, NHS, Cleveland Clinic). If you want more information, check the commercial sites. Avoid using social media or forums for medical decisions.`,
+                highlight: null
+            },
+            "Should I see a doctor?": {
+                text: `This is the MOST IMPORTANT question! Let me explain when stomach pain needs medical attention:
+
+<strong>🚨 GO TO EMERGENCY NOW if you have:</strong>
+
+• Severe pain that won't go away
+• Pain with fever over 100°F (38°C)
+• Bloody or black stools
+• Vomiting blood
+• Can't keep any food or liquid down
+• Pregnant and have severe pain
+• Pain after an injury to your stomach
+• Can't poop or pass gas + bloating
+
+<strong>📞 CALL YOUR DOCTOR TODAY if you have:</strong>
+
+• Pain lasting more than a few days
+• Pain with weight loss you didn't plan
+• Pain with burning when you pee
+• Pain that gets worse or won't improve
+• You're unsure and worried
+
+<strong>✅ CAN WAIT AND WATCH if you have:</strong>
+
+• Mild pain that comes and goes
+• Pain after eating certain foods
+• Pain with gas or bloating
+• Pain that's getting better on its own
+
+<strong>Important to Know:</strong>
+
+The search engine showed you general information, but it has NO IDEA about:
+• How severe YOUR pain is
+• How long you've had it
+• Other symptoms YOU might have
+• Your medical history
+
+<strong>Bottom line:</strong> If you're worried enough to search online, it's probably worth calling your doctor. They can ask you specific questions about YOUR situation that a website cannot.`,
+                highlight: null
+            },
+            "Why do I see these results?": {
+                text: `Let me explain how the search engine chose these results - it's simpler than you might think!
+
+<strong>How Search Found These Pages:</strong>
+
+1️⃣ <strong>Matching Words</strong>
+You typed: "stomach pain" + "illness" + "indicate"
+The search engine looked for pages with these exact words
+
+2️⃣ <strong>Popular Medical Sites</strong>
+The engine knows certain health websites are visited by millions of people:
+• Mayo Clinic → <span class="metric-tag">50 million visitors/month</span>
+• WebMD → <span class="metric-tag">70 million visitors/month</span>
+• NHS → <span class="metric-tag">UK official health service</span>
+
+3️⃣ <strong>What Other People Clicked</strong>
+When others searched similar questions, these are the pages they clicked most often
+
+<strong>⚠️ What Search Did NOT Do:</strong>
+
+❌ It did NOT diagnose you
+❌ It did NOT look at your medical history
+❌ It did NOT evaluate if information fits YOUR situation
+❌ It did NOT verify every fact on these pages
+
+<strong>Think of it Like This:</strong>
+
+Imagine you asked 100 people "Where can I learn about stomach pain?" Most would say "Try Mayo Clinic or WebMD." The search engine is doing the same thing - pointing you to popular medical websites.
+
+<strong>BUT REMEMBER:</strong> Popular doesn't always mean right for YOU. These are starting points for learning, not personal medical advice.`,
+                highlight: null
+            },
+            "What to watch out for?": {
+                text: `Excellent question! Here are important things to watch out for when reading health information online:
+
+<strong>🚩 RED FLAGS - Don't Trust These:</strong>
+
+⚠️ <strong>Claims of "miracle cures"</strong>
+"This one weird trick cured my pain!"
+→ Real medicine doesn't work like magic
+
+⚠️ <strong>Trying to sell you something</strong>
+"Buy our supplement to cure stomach problems"
+→ Trustworthy sites inform, they don't sell
+
+⚠️ <strong>Dramatic language</strong>
+"10 DEADLY signs you're ignoring!"
+→ Designed to scare you, not help you
+
+⚠️ <strong>No author or date</strong>
+Medical information needs to show:
+• Who wrote it (a doctor?)
+• When was it updated?
+• Where did the information come from?
+
+<strong>✅ GREEN FLAGS - More Trustworthy:</strong>
+
+✓ Shows multiple possible causes (not just one scary disease)
+✓ Says "see a doctor" for diagnosis
+✓ Written or reviewed by medical professionals
+✓ Explains when symptoms are serious vs. common
+✓ Updated recently (medical knowledge changes!)
+
+<strong>💡 COMMON MISTAKE:</strong>
+
+"My symptoms match this serious disease online!"
+
+<strong>Reality:</strong> Common symptoms (like stomach pain) can have MANY causes. Most are not serious. Websites list serious causes to be thorough, not because they're likely.
+
+Example: Headache can be:
+• Dehydration (very common) ✓
+• Stress (very common) ✓  
+• Brain tumor (extremely rare) ✗
+
+Don't jump to worst-case scenarios!
+
+<strong>🎯 BEST APPROACH:</strong>
+
+1. Read from trusted medical sites (Mayo, NHS)
+2. Learn about common causes first
+3. Note when they say "see a doctor"
+4. Don't diagnose yourself - let a doctor do that
+5. If worried, call your doctor!`,
+                highlight: null
+            },
+            "Why is the top result ranked first?": {
+                text: `Let me explain why Mayo Clinic is at the top - it's a good example of how search rankings work!
+
+<strong>Why Mayo Clinic Ranks #1:</strong>
+
+🏥 <strong>Trusted Medical Authority</strong>
+• One of the most respected hospitals in the world
+• Doctors and medical professionals write all content
+• Information reviewed by multiple experts
+• The search engine recognizes this as highly reliable
+
+📊 <strong>People Trust It</strong>
+When people search health questions:
+• 8 out of 10 people click Mayo Clinic when it appears
+• People spend a long time reading (= good quality)
+• Very few people click "back" to search again
+
+✅ <strong>Complete Information</strong>
+• Covers many possible causes (not just one)
+• Explains when to see a doctor
+• Easy to understand language
+• Updated regularly by medical staff
+
+<strong>This Doesn't Mean Other Results Are Wrong!</strong>
+
+All the top 5 results have good medical information. The order mostly shows:
+• Which sites are more popular
+• Which sites people trust more
+• Which sites have better reputations
+
+<strong>⚠️ Important to Understand:</strong>
+
+The #1 result is popular and trusted, but the search engine did NOT:
+• Verify it's right for YOUR specific situation
+• Check if you have other symptoms not in your search
+• Consider your age, medical history, or medications
+
+<strong>Bottom Line:</strong>
+Mayo Clinic is #1 because it's a highly trusted medical source that millions of people rely on. But you should still talk to YOUR doctor about YOUR symptoms!`,
+                highlight: 1
+            }
+        };
+
+
+        // Result click handler
+        results.forEach(result => {
+            result.addEventListener('click', function() {
+                const resultNum = this.dataset.result;
+                
+                // Remove previous highlights
+                document.querySelectorAll('.result').forEach(r => r.classList.remove('highlighted'));
+                document.querySelectorAll('.highlight-overlay').forEach(h => h.remove());
+                
+                // Add highlight
+                this.classList.add('highlighted');
+                
+                // Add user message
+                addMessage('user', `Tell me about result #${resultNum}`);
+                
+                // Simulate bot response
+                setTimeout(() => {
+                    showTypingIndicator();
+                    setTimeout(() => {
+                        removeTypingIndicator();
+                        
+                        let responseText = '';
+                        if (resultNum === '1') {
+                            responseText = `You clicked on Mayo Clinic - this is one of the BEST sources for health information!
+
+<strong>✅ Why You Can Trust Mayo Clinic:</strong>
+
+🏥 <strong>Official Medical Institution</strong>
+• One of the top hospitals in the United States
+• Over 4,700 doctors and scientists work there
+• Treats over 1 million patients every year
+
+👨‍⚕️ <strong>Expert Authors</strong>
+• All articles written by medical doctors
+• Content reviewed by multiple specialists
+• Not written by journalists or bloggers
+
+📋 <strong>Quality Control</strong>
+• Information checked for medical accuracy
+• Updated when new medical research comes out
+• Based on scientific evidence, not opinions
+
+<strong>🎯 What This Page Will Tell You:</strong>
+
+This article covers:
+• Many different causes of stomach pain (not just scary ones!)
+• When pain is serious vs. when it's common and harmless
+• Specific symptoms that mean "go to the hospital NOW"
+• What you can do at home for mild pain
+
+<strong>⚠️ What This Page CANNOT Do:</strong>
+
+❌ Tell you what's wrong with YOU specifically
+❌ Replace talking to your own doctor
+❌ Know your medical history or other symptoms you have
+❌ Give you prescriptions or specific treatment
+
+<strong>💡 How to Use This Information:</strong>
+
+1. Read about different causes
+2. See if your symptoms match the "serious" warning signs
+3. If you're worried → call your doctor
+4. If symptoms are mild and match "common causes" → you can monitor at home
+5. When in doubt → always ask a medical professional!
+
+This is a great starting point to learn, but your doctor is the only one who can diagnose YOU.`;
+                        } else if (resultNum === '2') {
+                            responseText = `You clicked on Healthline - let me explain what this source is:
+
+<strong>⚠️ Healthline: Good Information BUT Be Aware</strong>
+
+📰 <strong>What It Is:</strong>
+• Commercial health website (makes money from ads)
+• Articles written by health writers and reviewed by doctors
+• Very popular (60+ million visitors per month)
+
+<strong>✅ Good Things About Healthline:</strong>
+
+• Generally accurate medical information
+• Easy to read and understand
+• Covers a LOT of different health topics
+• Shows which doctors reviewed the content
+
+<strong>⚠️ Things to Watch Out For:</strong>
+
+💰 <strong>Advertising Influence</strong>
+• Has ads and sponsored content
+• May recommend products or tests you might not need
+• Business goal is to keep you on the site (more clicks = more money)
+
+📢 <strong>Dramatic Headlines</strong>
+• Sometimes uses scary language to get attention
+• "27 Possible Causes" sounds alarming
+• Many of those causes are very rare!
+
+<strong>💡 How to Read This Wisely:</strong>
+
+1. <strong>Start with common causes</strong> (usually listed first)
+   Most stomach pain is from: gas, indigestion, stress, eating too much
+
+2. <strong>Don't panic at rare diseases</strong>
+   They list everything to be complete, not because you likely have it
+
+3. <strong>Focus on the "when to see a doctor" section</strong>
+   This is the most useful part
+
+4. <strong>Ignore the ads</strong>
+   You don't need to buy products to feel better
+
+<strong>🎯 Better Strategy:</strong>
+
+Read Healthline for general learning, BUT:
+• Confirm important information with official medical sites (Mayo Clinic, NHS)
+• Don't let the long list of possible causes scare you
+• Talk to your doctor for real diagnosis
+
+<strong>Bottom Line:</strong> Healthline is okay for learning, but treat it like a health magazine, not a medical textbook. The information is usually correct, but it's designed to be dramatic to keep you reading.`;
+                        } else if (resultNum === '3') {
+                            responseText = `You clicked on WebMD - here's what you should know:
+
+<strong>⚠️ WebMD: Mixed Trustworthiness</strong>
+
+<strong>What It Is:</strong>
+• Very popular health website (70+ million visitors/month)
+• Commercial site supported by advertising
+• Mix of good medical information and commercial content
+
+<strong>✅ Positive Aspects:</strong>
+
+• Been around since 1996 (long history)
+• Has medical professionals review content
+• Covers wide range of health topics
+• Easy-to-use symptom checker
+
+<strong>❌ Concerns to Know About:</strong>
+
+💰 <strong>Commercial Focus</strong>
+• Makes money from pharmaceutical advertising
+• May promote expensive tests or treatments
+• "Symptom checker" often suggests worst-case scenarios
+
+⚠️ <strong>"Dr. Google" Problem</strong>
+• People joke about "WebMD says you're dying"
+• Known for making people unnecessarily worried
+• Lists rare diseases alongside common causes
+
+<strong>🔍 Real Example:</strong>
+
+Type "headache" into WebMD:
+• Common causes: stress, dehydration, not enough sleep ✓
+• Rare causes: brain tumor, aneurysm ✗
+→ Most headaches are NOT serious, but WebMD highlights scary options
+
+<strong>💡 How to Use WebMD Smartly:</strong>
+
+✅ <strong>DO:</strong>
+• Read for general health education
+• Learn medical terminology
+• Understand basic anatomy
+• Find questions to ask your doctor
+
+❌ <strong>DON'T:</strong>
+• Use the symptom checker to diagnose yourself
+• Assume you have the rare diseases they list
+• Let it replace seeing a real doctor
+• Buy products they advertise
+
+<strong>🎯 Better Approach:</strong>
+
+Think of WebMD like a health encyclopedia:
+• Good for looking up terms you don't understand
+• Not good for deciding what's wrong with you
+• Always verify with trusted medical sites (Mayo, NHS, Cleveland Clinic)
+
+<strong>When to Ignore WebMD:</strong>
+If reading it makes you MORE anxious instead of more informed, close it and call your doctor instead!`;
+                        } else if (resultNum === '4') {
+                            responseText = `You clicked on NHS (National Health Service) - EXCELLENT choice!
+
+<strong>✅ NHS: One of the MOST Trustworthy Sources</strong>
+
+🏥 <strong>What NHS Is:</strong>
+• Official healthcare system for the United Kingdom
+• Run by the UK government (public service, not a business)
+• Provides free healthcare to 67 million people
+• One of the largest healthcare systems in the world
+
+<strong>🌟 Why NHS Is So Trustworthy:</strong>
+
+1️⃣ <strong>No Commercial Interest</strong>
+• NOT trying to sell you anything
+• No advertising or sponsored content
+• Advice based ONLY on medical evidence
+• Goal is to help people, not make money
+
+2️⃣ <strong>Evidence-Based</strong>
+• All guidance based on scientific research
+• Updated when new medical evidence emerges
+• Conservative advice (won't recommend unnecessary treatment)
+
+3️⃣ <strong>Expert Review</strong>
+• Written by UK medical professionals
+• Reviewed by practicing doctors
+• Approved by medical specialists
+
+<strong>💡 What Makes NHS Different:</strong>
+
+<strong>Compare these examples:</strong>
+
+Commercial site: "Try these 10 supplements for stomach pain!"
+NHS: "Most stomach aches get better on their own in a few days."
+
+Commercial site: "27 possible causes you need to know!"
+NHS: "Common causes are trapped wind, indigestion, or stress."
+
+<strong>🎯 How NHS Information Works:</strong>
+
+The NHS tells you:
+• What's most COMMON (not most dramatic)
+• When you can safely wait and watch
+• Exactly when you should see a doctor
+• How to care for yourself at home
+
+They're practical because they deal with millions of real patients!
+
+<strong>✅ Perfect For You Because:</strong>
+
+• No scary language to get clicks
+• Focuses on likely causes first
+• Clear about when to worry vs. when to relax
+• Free from advertising bias
+
+<strong>💡 Best Practice:</strong>
+
+When you search health questions, try adding "NHS" to your search:
+• "stomach pain NHS"
+• "headache NHS"  
+• "fever NHS"
+
+You'll get more balanced, trustworthy information!
+
+<strong>Bottom Line:</strong> If Mayo Clinic and NHS both say the same thing, you can be very confident that information is accurate.`;
+                        } else if (resultNum === '5') {
+                            responseText = `You clicked on Cleveland Clinic - another EXCELLENT medical source!
+
+<strong>✅ Cleveland Clinic: Highly Trustworthy</strong>
+
+🏥 <strong>What It Is:</strong>
+• Major nonprofit hospital in Ohio, USA
+• One of the top 5 hospitals in America
+• Ranked #1 for heart care in the country
+• Treats patients from all over the world
+
+<strong>🌟 Why It's Trustworthy:</strong>
+
+1️⃣ <strong>Nonprofit Medical Center</strong>
+• Primary goal: patient care, not profit
+• Run by medical professionals
+• No shareholders demanding money
+
+2️⃣ <strong>Expert Medical Staff</strong>
+• 4,500+ doctors on staff
+• Specialists in every medical field
+• Authors are practicing physicians
+
+3️⃣ <strong>Quality Standards</strong>
+• Information peer-reviewed by doctors
+• Based on latest medical research
+• Updated regularly
+
+<strong>📊 Trust Ranking:</strong>
+
+<span class="metric-tag">TOP TIER</span> Mayo Clinic, NHS, Cleveland Clinic
+<span class="metric-tag">GOOD</span> Healthline, WebMD (with caution)
+<span class="metric-tag">AVOID</span> Forums, personal blogs, social media
+
+<strong>💡 What Cleveland Clinic Does Well:</strong>
+
+• Explains medical concepts clearly
+• Doesn't use scare tactics
+• Separates "common" from "serious" causes
+• Gives actionable advice
+• Shows when to seek care
+
+<strong>🎯 How This Compares to Other Results:</strong>
+
+<strong>Cleveland Clinic approach:</strong>
+"Abdominal pain is common. Most cases are not serious. However, some types can signal serious problems..."
+
+<strong>Healthline/WebMD approach:</strong>
+"27 causes! Some are life-threatening! Check all these symptoms!"
+
+See the difference? Cleveland Clinic is calm and practical.
+
+<strong>✅ Use This Source When:</strong>
+
+• You want detailed medical information
+• You need to understand a diagnosis
+• You want to know what questions to ask your doctor
+• You want information without drama or ads
+
+<strong>💡 Pro Tip:</strong>
+
+The "BIG THREE" trusted medical sources are:
+1. Mayo Clinic
+2. Cleveland Clinic  
+3. Johns Hopkins Medicine
+
+If all three say the same thing → that's reliable information!
+
+<strong>Bottom Line:</strong> Cleveland Clinic is in the same trust category as Mayo Clinic. Great choice for learning about health topics!`;
+                        } else if (resultNum === '6') {
+                            responseText = `⚠️ You clicked on Reddit - IMPORTANT WARNING about this source!
+
+<strong>❌ Reddit/Forums: Do NOT Use for Medical Decisions</strong>
+
+<strong>What This Is:</strong>
+• Reddit is a social media website
+• r/AskDocs = people asking medical questions online
+• Random people share their personal experiences
+• Anyone can post (no verification needed)
+
+<strong>🚫 Why This Is DANGEROUS for Health Info:</strong>
+
+1️⃣ <strong>Not Medical Professionals</strong>
+• Most people responding are NOT doctors
+• Even if they claim to be, you can't verify it
+• No accountability if they give bad advice
+
+2️⃣ <strong>Personal Experience ≠ Medical Advice</strong>
+Example from the search result:
+"Update: Went to ER, it was appendicitis..."
+
+This person's story might make YOU think you have appendicitis when you probably don't!
+
+3️⃣ <strong>Confirmation Bias</strong>
+• People post dramatic stories
+• Rare cases get more attention and upvotes
+• You don't see the 1,000 people whose pain went away on its own
+
+4️⃣ <strong>Spread of Misinformation</strong>
+• False information spreads quickly
+• No fact-checking process
+• Dangerous home remedies shared
+• People delay seeing real doctors
+
+<strong>🔍 Why Search Showed This Result:</strong>
+
+The search engine found it because:
+• Has the words "stomach pain" in it
+• Lots of people clicked on it (popular)
+• Many comments = looks "engaging"
+
+BUT → Popular doesn't mean accurate or safe!
+
+<strong>💡 Real Risk Example:</strong>
+
+Forum post: "I had stomach pain. Turned out to be appendicitis!"
+
+YOU might think: "I have stomach pain too! Must be appendicitis!"
+
+REALITY: 
+• Appendicitis: 1 in 20 people in their lifetime
+• Common stomach pain: Everyone, all the time
+• Your pain is probably NOT appendicitis!
+
+<strong>🎯 What TO DO Instead:</strong>
+
+❌ DON'T: Read forums and diagnose yourself
+✅ DO: Read Mayo Clinic, NHS, Cleveland Clinic
+✅ DO: Call your actual doctor if worried
+
+<strong>If You're Tempted to Read Forums:</strong>
+
+Ask yourself:
+• "Am I looking for reassurance?" → Call your doctor instead
+• "Am I scared?" → Medical sites + doctor are better
+• "Want to know others' experiences?" → Remember: their situation ≠ your situation
+
+<strong>⚠️ Bottom Line:</strong>
+
+Forums and Reddit for health questions are like asking strangers on the street for medical advice. They might mean well, but they don't know medicine and don't know YOU.
+
+<strong>The search engine ranks this #6</strong> (near bottom) for a reason - it knows it's less reliable than the official medical sites above it!
+
+Please use Mayo Clinic, NHS, or Cleveland Clinic instead!`;
+                        } else {
+                            responseText = `Let me help you understand this result!
+
+<strong>How to Evaluate Any Health Information:</strong>
+
+Ask these questions:
+
+1️⃣ <strong>Who wrote this?</strong>
+• Is it a doctor or medical professional?
+• Or is it a journalist, blogger, or random person?
+
+2️⃣ <strong>What's their goal?</strong>
+• Help you learn? (good ✓)
+• Sell you something? (be careful ⚠️)
+• Get clicks/attention? (be skeptical ❌)
+
+3️⃣ <strong>Is it current?</strong>
+• When was it written or updated?
+• Medical knowledge changes!
+
+4️⃣ <strong>Does it match trusted sources?</strong>
+• Compare to Mayo Clinic, NHS
+• Do they say the same thing?
+
+<strong>💡 Remember:</strong>
+
+Searching for health information is okay for learning, but:
+• Search engines don't diagnose
+• They show popular pages, not necessarily right answers for YOU
+• Your symptoms + medical history are unique
+• Only a doctor who examines you can diagnose
+
+When in doubt → call your doctor!`;
+                        }
+                        
+                        addMessage('bot', responseText);
+                    }, 1500);
+                }, 300);
+            });
+        });
+
+        // Quick action buttons
+        quickActionBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const question = this.dataset.question;
+                handleUserMessage(question);
+            });
+        });
+
+        // Send button
+        sendBtn.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                handleUserMessage(message);
+                userInput.value = '';
+            }
+        });
+
+        // Enter key
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        function handleUserMessage(message) {
+            addMessage('user', message);
+            
+            // Find matching response
+            let response = null;
+            let highlightResult = null;
+            
+            for (const [key, value] of Object.entries(responses)) {
+                if (message.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(message.toLowerCase())) {
+                    response = value.text;
+                    highlightResult = value.highlight;
+                    break;
+                }
+            }
+            
+            // Default response if no match
+            if (!response) {
+                response = `That's a great question: "${message}"
+
+Let me help you think about health information online:
+
+<strong>🔍 How Search Engines Work:</strong>
+• They find pages with your keywords
+• They rank popular/trusted sites higher
+• They DON'T verify if information is right for YOU
+• They DON'T diagnose your specific situation
+
+<strong>💡 What You Should Know:</strong>
+
+✅ <strong>Good Sources:</strong> Mayo Clinic, NHS, Cleveland Clinic
+⚠️ <strong>Okay Sources:</strong> Healthline, WebMD (be cautious)
+❌ <strong>Avoid:</strong> Forums, social media, personal blogs
+
+<strong>Important Reminders:</strong>
+• These are general information pages
+• They can't know YOUR specific situation
+• When worried → call your doctor
+• Don't diagnose yourself online
+
+Try clicking on one of the results to learn more about it, or ask me one of the suggested questions above!`;
+            }
+            
+            setTimeout(() => {
+                showTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage('bot', response);
+                    
+                    // Highlight result if specified
+                    if (highlightResult) {
+                        document.querySelectorAll('.result').forEach(r => r.classList.remove('highlighted'));
+                        const targetResult = document.querySelector(`[data-result="${highlightResult}"]`);
+                        if (targetResult) {
+                            targetResult.classList.add('highlighted');
+                            targetResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                }, 1800);
+            }, 300);
+        }
+
+        function addMessage(type, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'bot' ? 'AI' : 'U';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.innerHTML = text;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message bot';
+            indicator.id = 'typingIndicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'AI';
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message-content typing-indicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            
+            indicator.appendChild(avatar);
+            indicator.appendChild(typingDiv);
+            chatMessages.appendChild(indicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+    </script>
+</body>
+</html>
