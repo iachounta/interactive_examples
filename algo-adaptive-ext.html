@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samy - Your Adaptive Search Explainer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Simulated Google Search Page */
+        .search-page {
+            flex: 1;
+            background: #fff;
+            overflow-y: auto;
+            padding: 20px;
+            border-right: 1px solid #dadce0;
+        }
+
+        .search-header {
+            max-width: 652px;
+            margin: 0 auto 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .search-stats {
+            color: #70757a;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            max-width: 652px;
+            margin: 0 auto;
+        }
+
+        .result {
+            margin-bottom: 32px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .result:hover {
+            background: #f8f9fa;
+        }
+
+        .result.highlighted {
+            background: #e8f0fe;
+            border-left: 3px solid #1a73e8;
+            padding-left: 13px;
+        }
+
+        .result-url {
+            font-size: 14px;
+            color: #202124;
+            margin-bottom: 3px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            color: #1a0dab;
+            margin-bottom: 3px;
+            line-height: 1.3;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-snippet {
+            font-size: 14px;
+            color: #4d5156;
+            line-height: 1.58;
+        }
+
+        .result-badge {
+            display: inline-block;
+            background: #1a73e8;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        /* Chatbot Side Panel */
+        .chatbot-panel {
+            width: 420px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        }
+
+        .chatbot-header {
+            background: #1a73e8;
+            color: white;
+            padding: 16px;
+            font-weight: 500;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chatbot-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chatbot-icon {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .knowledge-level-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .level-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .level-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .level-btn.active {
+            background: white;
+            color: #1a73e8;
+            border-color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .message.bot .message-avatar {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #34a853;
+            color: white;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.user .message-content {
+            background: #e8f0fe;
+        }
+
+        .message-content strong {
+            color: #1a73e8;
+            font-weight: 600;
+        }
+
+        .message-content em {
+            font-style: italic;
+            color: #5f6368;
+        }
+
+        .message-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin: 6px 0;
+        }
+
+        .level-indicator {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .quick-actions {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid #dadce0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .quick-actions-title {
+            font-size: 12px;
+            color: #5f6368;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .quick-action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .quick-action-btn {
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .quick-action-btn:hover {
+            background: #e8f0fe;
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+
+        .chat-input-container {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #dadce0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #dadce0;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-input input:focus {
+            border-color: #1a73e8;
+        }
+
+        .chat-input button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .chat-input button:hover {
+            background: #1557b0;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #5f6368;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .metric-tag {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+            font-weight: 500;
+        }
+
+        .info-box {
+            background: #f1f3f4;
+            border-left: 3px solid #1a73e8;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .comparison-box {
+            background: #fef7e0;
+            border: 1px solid #f9ab00;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Simulated Google Search Page -->
+        <div class="search-page">
+            <div class="search-header">
+                <div class="search-box">
+                    <input type="text" value="does immigration increase crime?" readonly>
+                </div>
+                <div class="search-stats">About 8,340,000 results (0.41 seconds)</div>
+            </div>
+            
+            <div class="search-results">
+                <div class="result" data-result="1">
+                    <div class="result-url">https://www.brennancenter.org › our-work › analysis</div>
+                    <div class="result-title">The Relationship Between Immigration and Crime<span class="result-badge">RESEARCH</span></div>
+                    <div class="result-snippet">Multiple peer-reviewed studies consistently find no evidence that immigration increases crime rates. Research spanning decades shows immigrants are less likely to commit crimes than native-born citizens...</div>
+                </div>
+
+                <div class="result" data-result="2">
+                    <div class="result-url">https://www.cato.org › immigration › research</div>
+                    <div class="result-title">Immigration and Crime: What the Research Says</div>
+                    <div class="result-snippet">Analysis of FBI data and academic research shows that areas with higher immigration have experienced declining crime rates. Studies find that both legal and undocumented immigrants have lower incarceration rates...</div>
+                </div>
+
+                <div class="result" data-result="3">
+                    <div class="result-url">https://news.stanford.edu › research › immigration-crime</div>
+                    <div class="result-title">Stanford study: Immigration does not increase crime rates</div>
+                    <div class="result-snippet">Stanford research analyzing 150 years of census data finds no link between immigration and crime. The study challenges common misconceptions and shows crime rates fell as immigration increased...</div>
+                </div>
+
+                <div class="result" data-result="4">
+                    <div class="result-url">https://www.heritage.org › immigration › commentary</div>
+                    <div class="result-title">Questions About Immigration and Crime Data</div>
+                    <div class="result-snippet">While many studies claim immigration doesn't increase crime, critics argue data collection issues mask the real impact. Questions remain about how crimes by undocumented immigrants are recorded and reported...</div>
+                </div>
+
+                <div class="result" data-result="5">
+                    <div class="result-url">https://twitter.com › search</div>
+                    <div class="result-title">Posts about immigration and crime - X (Twitter)</div>
+                    <div class="result-snippet">Breaking: Another violent crime committed by illegal immigrant. When will our leaders protect citizens? This is happening every day but media won't report it. #Immigration #Crime [Trending topic]</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatbot Side Panel -->
+        <div class="chatbot-panel">
+            <div class="chatbot-header">
+                <div class="chatbot-header-left">
+                    <div class="chatbot-icon">🔍</div>
+                    <span>Samy - Search Explainer</span>
+                </div>
+                <div class="knowledge-level-selector">
+                    <button class="level-btn active" data-level="beginner">Beginner</button>
+                    <button class="level-btn" data-level="experienced">Experienced</button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    <div class="message-avatar">S</div>
+                    <div class="message-content" id="initialMessage">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <div class="quick-actions-title">Follow-up Questions:</div>
+                <div class="quick-action-buttons" id="quickActionButtons">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input">
+                    <input type="text" id="userInput" placeholder="Ask Samy about these results...">
+                    <button id="sendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 'beginner';
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const levelBtns = document.querySelectorAll('.level-btn');
+        const quickActionButtons = document.getElementById('quickActionButtons');
+        const initialMessage = document.getElementById('initialMessage');
+
+        // Initial messages for each level
+        const initialMessages = {
+            beginner: `<div class="level-indicator">EASY LANGUAGE MODE</div>
+Hi, this is Samy, your search explainer!
+
+<strong>Why you might see these results</strong>
+
+When you search "Does immigration increase crime?", the search engine does not show the same results to everyone. It tries to guess what kind of information will feel most relevant to you.
+
+To do this, it uses some of your personal data, for example:
+• what you searched for before
+• which links or videos you usually click
+• your location and language
+• whether you often read news, blogs, or watch videos
+
+Based on this, the search engine may show you more articles that fit your past interests or concerns. If you previously clicked on crime-related news, you may see more results that focus on risks. If you often read social or academic content, you may see studies or explanations instead.
+
+<strong>This means:</strong> the results can slowly push you toward one way of seeing the topic, even though other perspectives also exist.`,
+            experienced: `<div class="level-indicator">SOPHISTICATED LANGUAGE MODE</div>
+Hi, this is Samy, your search explainer!
+
+<strong>How personalization shapes these search results</strong>
+
+When you submit the query "Does immigration increase crime?", the search engine applies algorithmic ranking that is partially personalized. This personalization is based on inferred user characteristics derived from multiple data sources.
+
+These include:
+• your search and click history
+• long-term browsing patterns across websites and apps
+• engagement with politically framed content (e.g., news, videos, opinion pieces)
+• contextual signals such as location, device, and language
+
+The algorithm does not simply retrieve "the best" answer, but prioritizes sources that align with your predicted interests and prior engagement patterns. As a result, you may be shown:
+• security-oriented narratives emphasizing crime statistics, or
+• sociological and criminological research highlighting structural factors and counter-evidence.
+
+<strong>Consequence:</strong> Over time, this personalization can stabilize a particular interpretive frame. Instead of exposing you to the full range of academic and political perspectives, the system may reinforce existing assumptions, thereby shaping political attitudes and risk perceptions without explicit awareness.`
+        };
+
+        // Follow-up questions for each level
+        const followUpQuestions = {
+            beginner: [
+                "Why does Google show different results to different people?",
+                "What kind of information about me does the search engine use?",
+                "Does my search history really affect what I see?",
+                "Would someone else get different results for the same question?",
+                "How can I see more than one side of this topic?",
+                "Can I turn off personalized search results?",
+                "What happens if everybody gets different search results?",
+                "What happens if I search in private or incognito mode?"
+            ],
+            experienced: [
+                "Which user signals are most influential in ranking political search results?",
+                "How does personalization interact with query framing and wording?",
+                "To what extent does search personalization contribute to filter bubbles?",
+                "How stable are personalized rankings over time?",
+                "How does Google balance relevance, authority, and diversity in political queries?",
+                "What empirical evidence exists for political opinion reinforcement through search?",
+                "How does search personalization differ from recommender systems (e.g. YouTube)?",
+                "What are the normative implications of personalized political information access?"
+            ]
+        };
+
+        // Responses for follow-up questions
+        const responses = {
+            beginner: {
+                "Why does Google show different results to different people?": `Google wants to give you results that feel useful and interesting <em>to you specifically</em>.
+
+Think of it like this: If two people search "football", one person might want to know about American football, and another about soccer. Google tries to figure out which one you probably mean based on:
+• where you live (US vs. Europe)
+• what you've searched before
+• what language you use
+
+For your question about immigration and crime, Google does something similar. It looks at what kinds of articles you usually click on and tries to show you more of that type.
+
+<div class="info-box">
+<strong>The problem:</strong> This can create a bubble where you only see information that matches what you already believe or are interested in. Other viewpoints might not appear in your results at all.
+</div>`,
+                "What kind of information about me does the search engine use?": `The search engine collects and uses several types of information about you:
+
+<strong>1. Your Search History</strong>
+Every search you type is saved and analyzed. If you often search about crime news, the engine "learns" you're interested in crime stories.
+
+<strong>2. Your Click Behavior</strong>
+Which results do you click? How long do you stay on each page? If you always click on news articles but skip academic studies, Google notices.
+
+<strong>3. Your Location</strong>
+Where you are when you search affects results. Someone in Texas might see different results than someone in California.
+
+<strong>4. Your Device & Browser</strong>
+Are you on a phone or computer? What browser do you use? This tells Google about your tech habits.
+
+<strong>5. Your YouTube & App Activity</strong>
+If you're logged into Google, it connects your YouTube videos, Gmail, Maps, and other activity to understand your interests better.
+
+<div class="info-box">
+<strong>Important:</strong> Google collects this data even if you don't think about it. It happens automatically when you use their services.
+</div>`,
+                "Does my search history really affect what I see?": `Yes, absolutely! Your search history has a BIG impact on your results.
+
+<strong>Here's how it works:</strong>
+
+Let's say you searched these things over the past month:
+• "local crime news"
+• "neighborhood safety tips"
+• "crime statistics in my city"
+
+When you now search "Does immigration increase crime?", Google thinks: "This person is interested in crime and safety. Let me show articles that focus on crime statistics and safety concerns."
+
+<strong>Now imagine someone else searched:</strong>
+• "refugee support organizations"
+• "immigration law explained"
+• "cultural diversity benefits"
+
+That person would likely see very different results – maybe more articles about refugee integration, human rights, or research studies.
+
+<div class="comparison-box">
+<strong>Same question, different results!</strong><br>
+Your history shapes what you see. Over time, this can make it seem like "everyone agrees" with one perspective, when actually you're just seeing one side of the story.
+</div>`,
+                "Would someone else get different results for the same question?": `Yes! Two people typing the exact same question can get completely different results.
+
+<strong>Factors that change results:</strong>
+
+<strong>Person A:</strong> Lives in New York, reads news sites, clicks on political articles
+→ Might see: News articles, opinion pieces, political commentary
+
+<strong>Person B:</strong> Lives in California, reads research papers, clicks on university websites
+→ Might see: Academic studies, research institutions, data analysis
+
+<strong>Person C:</strong> Watches YouTube videos, follows social media influencers
+→ Might see: Video content, social media posts, blog articles
+
+Same question, three different sets of results!
+
+<div class="info-box">
+<strong>Why this matters:</strong> You might think you're seeing "what Google found" – but really, you're seeing "what Google thinks YOU want to find." These are not the same thing.
+</div>`,
+                "How can I see more than one side of this topic?": `Great question! Here are some practical ways to break out of the bubble:
+
+<strong>1. Use Incognito/Private Mode</strong>
+Search in a private browser window. This reduces (but doesn't eliminate) personalization.
+
+<strong>2. Try Different Search Engines</strong>
+Use DuckDuckGo or Ecosia – they don't track you as much as Google does.
+
+<strong>3. Add Different Words</strong>
+Search "immigration crime research studies" vs "immigration crime news" – you'll get different types of results.
+
+<strong>4. Look for Research First</strong>
+Actively click on university websites (.edu) or research organizations instead of just news sites.
+
+<strong>5. Check Multiple Sources</strong>
+Don't trust just one article. Compare what different websites say. Look especially for sources that disagree with each other.
+
+<strong>6. Clear Your Search History</strong>
+Go to Google's activity page and delete your history. This "resets" what Google knows about you.
+
+<div class="info-box">
+<strong>Pro tip:</strong> If all the results seem to agree with each other, that's a RED FLAG. Real topics usually have multiple perspectives. If you only see one side, it might be because of personalization.
+</div>`,
+                "Can I turn off personalized search results?": `Yes, you can reduce personalization, but you can't turn it off completely.
+
+<strong>Ways to reduce personalization:</strong>
+
+<strong>1. Search While Logged Out</strong>
+Sign out of your Google account before searching. Google will have less information about you.
+
+<strong>2. Use Private/Incognito Mode</strong>
+Open a private browser window (Ctrl+Shift+N in Chrome). This prevents Google from using your browsing history.
+
+<strong>3. Pause Your Search History</strong>
+Go to myactivity.google.com → Turn off "Web & App Activity"
+
+<strong>4. Use a Different Search Engine</strong>
+Try DuckDuckGo.com – it promises not to track you or personalize results.
+
+<strong>5. Use a VPN</strong>
+A VPN hides your location, so Google can't personalize based on where you are.
+
+<div class="info-box">
+<strong>Important limitation:</strong> Even with these steps, Google still knows your IP address, what browser you use, and what device you're on. Complete anonymity is very hard to achieve.
+</div>
+
+<strong>Trade-off to consider:</strong>
+Personalization isn't all bad! It can help you find local restaurants, news in your language, or topics you care about. The key is being AWARE of when and how it's happening.`,
+                "What happens if everybody gets different search results?": `This is a really important question about society!
+
+<strong>When everyone sees different results, several things can happen:</strong>
+
+<strong>1. Filter Bubbles</strong>
+People end up in "bubbles" where they only see information that confirms what they already believe. They don't encounter different opinions.
+
+<strong>2. Divided Understanding of Reality</strong>
+If you see only research saying "immigration doesn't increase crime" and your neighbor sees only news about immigrant crime, you're living in different information worlds. You might not even understand why you disagree!
+
+<strong>3. Harder Conversations</strong>
+When people have seen completely different information, it's harder to have productive discussions. You might not even know what the "other side" is thinking.
+
+<strong>4. Less Common Knowledge</strong>
+In the past, most people watched the same TV news or read the same newspaper. Now, everyone can have a completely personalized news feed. There's less shared knowledge in society.
+
+<strong>5. Manipulation Becomes Easier</strong>
+If someone wants to influence your opinion, they can show you very specific, targeted information and hide other information from you.
+
+<div class="comparison-box">
+<strong>Example:</strong><br>
+During elections, different voters might see completely different "facts" about candidates because the search results are personalized. This makes it hard for voters to make informed comparisons.
+</div>
+
+<strong>What can we do?</strong>
+• Be aware personalization exists
+• Actively seek out different viewpoints
+• Talk to people who see different results
+• Don't assume your results are "objective truth"`,
+                "What happens if I search in private or incognito mode?": `Good thinking! Private/incognito mode helps, but it's not a complete solution.
+
+<strong>What Private Mode DOES:</strong>
+
+✅ Doesn't save your search history on your device
+✅ Doesn't use cookies from your regular browsing
+✅ Google can't connect this search to your Google account
+✅ Reduces some personalization
+
+<strong>What Private Mode DOESN'T DO:</strong>
+
+❌ Doesn't hide your IP address (your internet location)
+❌ Doesn't hide what device/browser you're using
+❌ Doesn't completely stop personalization
+❌ Your internet provider can still see what you search
+
+<div class="info-box">
+<strong>What you'll notice:</strong><br>
+If you search the same thing in regular mode vs. private mode, you'll often see SOME differences in results, but not completely different results. Private mode reduces personalization but doesn't eliminate it.
+</div>
+
+<strong>Better options for more privacy:</strong>
+• Use DuckDuckGo search engine (no tracking at all)
+• Use a VPN (hides your location)
+• Search while logged out of Google
+
+<strong>Bottom line:</strong> Private mode is a good first step, but if you want to see truly different results, you need to combine it with other strategies!`
+            },
+            experienced: {
+                "Which user signals are most influential in ranking political search results?": `Based on empirical research on search personalization, several user signals demonstrate varying degrees of influence:
+
+<strong>High-Impact Signals:</strong>
+
+<strong>1. Long-term Click Patterns (Strongest Effect)</strong>
+Longitudinal engagement with particular source types (news vs. academic) and political orientations creates stable preference profiles. Click-through behavior on politically framed content appears to have stronger personalization effects than query keywords alone.
+
+<strong>2. Geographic and Linguistic Context</strong>
+Location-based signals substantially affect results for geopolitically sensitive queries. Regional news sources and local political discourse frameworks receive algorithmic prioritization.
+
+<strong>3. Cross-platform Engagement Patterns</strong>
+Integration of YouTube watch history, search behavior, and Gmail content analysis enables sophisticated ideological profiling. Video consumption patterns particularly influential for political content ranking.
+
+<strong>Moderate-Impact Signals:</strong>
+
+<strong>4. Query Reformulation Sequences</strong>
+The search engine analyzes how users refine queries over sessions. Iterative query modification reveals information-seeking intentions and topic framing preferences.
+
+<strong>5. Dwell Time and Bounce Rate</strong>
+Time spent on landing pages and immediate returns to SERP signal content satisfaction. These engagement metrics inform future ranking for similar queries.
+
+<div class="info-box">
+<strong>Methodological Challenge:</strong> Most ranking signals operate in combination through neural network architectures, making individual signal attribution difficult. The ranking function is non-linear and context-dependent.
+</div>
+
+<strong>Research Evidence:</strong>
+Studies using sock puppet accounts with controlled browsing histories demonstrate that ideologically consistent engagement patterns produce measurably different SERPs within 2-3 weeks of sustained activity (Hannak et al., 2013; Robertson et al., 2018).`,
+                "How does personalization interact with query framing and wording?": `Query formulation interacts with personalization through several mechanisms:
+
+<strong>1. Semantic Priming Effects</strong>
+
+Different lexical choices activate distinct ranking pathways:
+
+<span class="metric-tag">Query A:</span> "illegal immigration crime statistics"
+→ Primes security/law enforcement frame
+→ Personalization amplifies news sources, advocacy sites
+
+<span class="metric-tag">Query B:</span> "immigration criminological research"
+→ Primes academic/research frame
+→ Personalization amplifies scholarly sources, institutional sites
+
+<strong>2. Frame Reinforcement Through Personalization</strong>
+
+Users with established engagement histories experience multiplicative effects:
+• Query framing sets initial retrieval scope
+• Personalization further narrows based on predicted preferences
+• Result: Compound filtering effect
+
+<div class="comparison-box">
+<strong>Empirical Example:</strong><br>
+A user with history of clicking conservative news sources searching "illegal immigration crime" will see substantially different results than a user with academic engagement history searching identical terms. The same query produces divergent information landscapes.
+</div>
+
+<strong>3. Query Suggestion Mechanisms</strong>
+
+Autocomplete and "People also ask" features are personalized:
+• Suggested query refinements reflect user's predicted interests
+• Creates pathway dependency in information search trajectories
+• Users may not recognize suggested queries as personalized
+
+<strong>4. Interaction with Search Intent Classification</strong>
+
+The algorithm infers search intent (informational, navigational, transactional):
+• Same query words classified differently based on user history
+• Political queries particularly susceptible to intent misclassification
+• Can shift results from research to opinion content
+
+<strong>Theoretical Implications:</strong>
+
+This interaction challenges the assumption of "neutral" information retrieval. Query framing and personalization create compound filtering where:
+<em>Final SERP = f(query_semantics × user_profile × temporal_context × source_authority)</em>
+
+Users have limited transparency into how their phrasing choices interact with their digital profile to produce results.`,
+                "To what extent does search personalization contribute to filter bubbles?": `The filter bubble hypothesis requires empirical nuance:
+
+<strong>Supporting Evidence:</strong>
+
+<strong>1. Measurable Personalization Effects</strong>
+Controlled experiments demonstrate:
+• 11.7% average variation in results between ideologically divergent user profiles (Hannak et al., 2013)
+• Up to 25% variation for politically contentious queries
+• Systematic ideological sorting of news sources
+
+<strong>2. Reinforcement Mechanisms</strong>
+Personalization can create positive feedback loops:
+• Users click content matching existing views
+• Algorithm learns these preferences
+• Future results increasingly homogeneous
+• Users less exposed to counter-attitudinal content
+
+<strong>3. Source Diversity Reduction</strong>
+For users with strong engagement histories, top 10 results show:
+• Lower source type diversity (news vs. academic vs. government)
+• Higher ideological clustering of news sources
+• Reduced representation of counter-narrative content
+
+<strong>Complicating Factors:</strong>
+
+<strong>1. Baseline Filter Effects</strong>
+Even non-personalized search shows:
+• Authority bias (established sources ranked higher)
+• Recency bias (newer content prioritized)
+• Linguistic match optimization
+→ Question: How much does personalization add beyond baseline filtering?
+
+<strong>2. Active Diversification Mechanisms</strong>
+Google implements some counter-bubble features:
+• Deliberate injection of diverse sources for controversial queries
+• "Top Stories" section with editorial diversity requirements
+• Authoritative source boost (regardless of user history)
+
+<strong>3. User Agency and Awareness</strong>
+Users who actively seek diverse sources can overcome personalization:
+• Query reformulation strategies
+• Direct navigation to specific sources
+• Use of scholarly databases
+
+<div class="info-box">
+<strong>Current Research Consensus:</strong><br>
+Personalization contributes to filter bubbles but is neither necessary nor sufficient. The effect size is moderate (10-25% variation) and interacts with:<br>
+• User digital literacy and awareness<br>
+• Active information-seeking strategies<br>
+• Topic politicization level<br>
+• Platform-specific ranking policies
+</div>
+
+<strong>Critical Perspective:</strong>
+The "filter bubble" framing may overstate algorithmic determinism while understating user agency. Personalization creates <em>affordances</em> for selective exposure but doesn't eliminate user capacity for diverse information seeking.`,
+                "How stable are personalized rankings over time?": `Ranking stability exhibits temporal dynamics worth examining:
+
+<strong>Short-term Volatility (Days-Weeks):</strong>
+
+<strong>1. Query-specific Learning</strong>
+• Initial personalization effects detectable within 3-5 searches
+• Plateau effect around 10-15 queries on similar topics
+• Rapid adaptation to new click patterns
+
+<strong>2. News Cycle Integration</strong>
+• Breaking news temporarily overrides personalization
+• Topical relevance decay function (~2 weeks for most news)
+• Return to personalized baseline post-news cycle
+
+<strong>Long-term Stability (Months-Years):</strong>
+
+<strong>3. Profile Crystallization</strong>
+Longitudinal studies show:
+• User profiles stabilize after ~3 months of consistent engagement
+• Ideological categorization relatively persistent (6-12 month stability)
+• Significant effort required to shift established profile
+
+<strong>4. Cross-temporal Consistency</strong>
+Repeated identical queries at different times show:
+• 70-80% overlap in top 10 results (same user, 1 month apart)
+• 60-70% overlap after 6 months
+• More stability for controversial topics (established source hierarchies)
+
+<div class="info-box">
+<strong>Methodological Insight:</strong><br>
+Stability varies by:<br>
+• User engagement frequency (active users: more stable)<br>
+• Topic dynamism (fast-moving topics: less stable)<br>
+• Algorithm update cycles (quarterly major updates introduce volatility)
+</div>
+
+<strong>Ranking Decay Functions:</strong>
+
+Recent research suggests personalization follows temporal decay:
+• Recent behavior (last 7 days): High weight (0.7-0.9)
+• Medium-term history (30 days): Moderate weight (0.4-0.6)
+• Long-term profile (6+ months): Baseline weight (0.2-0.3)
+
+This creates tension between:
+• Responsiveness (adapt to changing interests)
+• Consistency (predictable user experience)
+
+<strong>Implications for Filter Bubbles:</strong>
+
+High stability means:
+✓ Persistent exposure patterns
+✓ Difficulty escaping established information ecosystems
+✓ Long-term ideological reinforcement potential
+
+Lower stability would enable:
+✓ Easier profile diversification
+✓ Reduced echo chamber effects
+✓ More information serendipity
+
+Current evidence suggests <em>moderate-high</em> stability, particularly for politically engaged users on controversial topics.`,
+                "How does Google balance relevance, authority, and diversity in political queries?": `Google's ranking function for political queries involves multi-objective optimization:
+
+<strong>1. Relevance Optimization</strong>
+
+<strong>Lexical and Semantic Matching:</strong>
+• TF-IDF scoring for keyword relevance
+• BERT-based semantic similarity (query-document embeddings)
+• Query intent classification (informational vs. navigational)
+
+<strong>Personalization Layer:</strong>
+• User profile similarity to document characteristics
+• Historical click-through rate for similar queries
+• Engagement prediction models
+
+<strong>Trade-off:</strong> High relevance may reduce diversity if user history is ideologically homogeneous.
+
+<strong>2. Authority Signals</strong>
+
+<strong>Domain-level Authority:</strong>
+• PageRank and link analysis
+• Expert source identification (.edu, .gov, established institutions)
+• Fact-checking organization boost
+• Medical/YMYL (Your Money Your Life) quality standards
+
+<strong>Content-level Authority:</strong>
+• Author expertise signals
+• Citation patterns and references
+• Content freshness and update frequency
+
+<div class="info-box">
+<strong>For political queries:</strong> Google applies heightened authority requirements, boosting established news organizations and research institutions over blogs or user-generated content.
+</div>
+
+<strong>3. Diversity Mechanisms</strong>
+
+<strong>Explicit Diversity Interventions:</strong>
+• Source type diversification (news, academic, government)
+• Ideological balancing for controversial queries
+• "Top Stories" carousel with editorial diversity requirements
+• Information panel from authoritative sources (Wikipedia, fact-checkers)
+
+<strong>Algorithmic Diversity:</strong>
+• Maximal Marginal Relevance (MMR) algorithms
+• Cluster-based ranking (ensure topic coverage)
+• Temporal diversity (mix of recent and historical content)
+
+<strong>Tension Points:</strong>
+
+<span class="metric-tag">Relevance vs. Diversity:</span>
+Showing counter-attitudinal sources may decrease immediate user satisfaction but increase long-term information quality.
+
+<span class="metric-tag">Authority vs. Accessibility:</span>
+Academic sources have high authority but may be less accessible or engaging than news articles.
+
+<span class="metric-tag">Personalization vs. Diversity:</span>
+User-specific relevance conflicts with exposure to varied perspectives.
+
+<strong>Policy Adaptations:</strong>
+
+For politically sensitive queries, Google reportedly:
+• Reduces personalization weight
+• Increases authority thresholds
+• Manually curates some results
+• Provides informational panels from fact-checking sources
+
+<div class="comparison-box">
+<strong>Empirical Observation:</strong><br>
+Analysis of SERPs for "does immigration increase crime" shows:<br>
+• ~70% research/news sources (authority emphasis)<br>
+• ~20% opinion/commentary (diversity)<br>
+• ~10% social media (relevance/recency)<br>
+<br>
+This distribution suggests authority dominates over pure relevance or personalization for this query type.
+</div>
+
+<strong>Unresolved Challenges:</strong>
+
+1. No consensus definition of "fairness" in political information ranking
+2. Difficulty detecting and correcting algorithmic bias at scale
+3. Trade-offs between user satisfaction metrics and democratic information ideals
+4. Lack of transparency in exact ranking formulas
+
+The balancing act remains contested both technically and normatively.`,
+                "What empirical evidence exists for political opinion reinforcement through search?": `The evidence base for search-mediated opinion reinforcement is growing but methodologically complex:
+
+<strong>Experimental Evidence:</strong>
+
+<strong>1. Controlled Exposure Studies</strong>
+
+<strong>Epstein & Robertson (2015) - SEME Effect:</strong>
+• Search Engine Manipulation Effect (SEME)
+• Participants exposed to biased search results
+• Results: 20% vote preference shift in undecided voters
+• Effect: Biased rankings influence opinion formation
+• Limitation: Artificial lab setting, extreme bias condition
+
+<strong>2. Sock Puppet Account Studies</strong>
+
+<strong>Hannak et al. (2013):</strong>
+• Created accounts with opposing political engagement histories
+• Measured divergence in search results
+• Results: 11.7% average variation in returned URLs
+• Implication: Users with different profiles see systematically different information
+
+<strong>3. Longitudinal Panel Studies</strong>
+
+<strong>Robertson et al. (2018):</strong>
+• Tracked real users over 3-month period
+• Measured: Search behavior → Content exposure → Attitude change
+• Findings: Modest but significant correlation between personalized exposure and attitude polarization
+• Effect size: Small (d = 0.15-0.25)
+
+<strong>Observational Evidence:</strong>
+
+<strong>4. Large-scale Behavioral Analysis</strong>
+
+<strong>Kulshrestha et al. (2017) - Google vs. Twitter:</strong>
+• Compared search vs. social media filter bubbles
+• Results: Search shows <em>less</em> polarization than social media
+• Users actively seek diverse sources more in search than in feeds
+• But: Still measurable echo chamber effects for politically engaged users
+
+<strong>5. Audit Studies</strong>
+
+<strong>Multiple studies (2015-2023):</strong>
+• Regular audits of Google results for political queries
+• Document: Temporal consistency, source diversity, ideological balance
+• Findings: Variable diversity depending on query specificity and controversy level
+
+<div class="info-box">
+<strong>Meta-analytic Summary:</strong><br>
+Across studies, effect sizes for search-mediated opinion change are:<br>
+• Small-to-moderate in controlled settings (d = 0.20-0.40)<br>
+• Smaller in naturalistic settings (d = 0.10-0.25)<br>
+• Moderated by: Political interest, media literacy, query specificity
+</div>
+
+<strong>Mechanistic Evidence:</strong>
+
+<strong>6. Process Tracing Studies</strong>
+
+Research examining <em>how</em> effects occur:
+• Users exhibit confirmation bias in result selection
+• Higher-ranked results receive disproportionate attention (position bias)
+• Limited exploration beyond first page of results
+• Interaction effects between ranking and user predispositions
+
+<strong>Critical Perspectives:</strong>
+
+<strong>Null and Contradictory Findings:</strong>
+
+<strong>Nechushtai & Lewis (2019):</strong>
+• Found limited evidence of filter bubbles in search
+• Argument: Active search involves more diverse information seeking than passive feeds
+• Users often explicitly seek opposing viewpoints
+
+<strong>Haim et al. (2018):</strong>
+• Personalization effects smaller than individual search query differences
+• Users' own query choices matter more than algorithmic personalization
+
+<strong>Methodological Limitations Across Literature:</strong>
+
+1. <strong>External Validity:</strong> Lab studies may not reflect real-world search behavior
+2. <strong>Confounding:</strong> Difficult to isolate search effects from broader media environment
+3. <strong>Algorithm Opacity:</strong> Ranking formulas change frequently, limiting replicability
+4. <strong>Selection Bias:</strong> People who use search differently may have different outcomes
+5. <strong>Temporal Instability:</strong> Effects may vary across news cycles and political contexts
+
+<strong>Current Scholarly Consensus:</strong>
+
+<em>Weak-to-moderate evidence that search personalization can reinforce political opinions through selective exposure, but:</em>
+
+✓ Effect sizes generally small in naturalistic settings
+✓ Substantial individual variation (high political interest → stronger effects)
+✓ User agency matters: Active diversification reduces effects
+✓ Search appears less polarizing than social media recommender systems
+✗ Long-term cumulative effects poorly understood
+✗ Causal mechanisms incompletely specified
+
+The field needs:
+• Longer-term longitudinal designs
+• Better measurement of cumulative exposure
+• Integration with political communication theory
+• More ecological validity in experimental paradigms`,
+                "How does search personalization differ from recommender systems (e.g. YouTube)?": `Search and recommender systems employ fundamentally different information access paradigms:
+
+<strong>Structural Differences:</strong>
+
+<strong>1. User Intentionality</strong>
+
+<strong>Search (Pull-based):</strong>
+• User initiates with explicit query
+• Active information-seeking behavior
+• User controls topic and framing
+• Session-based interaction
+
+<strong>Recommenders (Push-based):</strong>
+• System proactively suggests content
+• Passive content consumption
+• Algorithm controls exposure sequence
+• Continuous autoplay/feed scrolling
+
+<div class="comparison-box">
+<strong>Implication:</strong> Search requires user agency and query formulation. Recommenders can shape information diet without explicit user choices.
+</div>
+
+<strong>2. Algorithmic Objectives</strong>
+
+<strong>Search Ranking:</strong>
+• Optimize: Relevance to query + authority + diversity
+• Metric: Click-through rate, time-to-success, reformulation rate
+• Constraint: Must respond to stated information need
+
+<strong>Recommendation Ranking:</strong>
+• Optimize: Engagement (watch time, session duration)
+• Metric: Total viewing hours, retention rate
+• Constraint: Maximize platform stickiness
+
+<strong>Consequence:</strong> YouTube optimizes for engagement ≠ information quality. Search has (theoretically) higher information quality standards.
+
+<strong>3. Personalization Mechanisms</strong>
+
+<strong>Search Personalization:</strong>
+• Based on: Query history, click patterns, location
+• Scope: Modify ranking within query-relevant set
+• Transparency: Some awareness through query suggestions
+• Controllability: User can reformulate queries
+
+<strong>Recommender Personalization:</strong>
+• Based on: Watch history, engagement signals, collaborative filtering
+• Scope: Generate entirely new content suggestions
+• Transparency: Minimal (no query to anchor expectations)
+• Controllability: Limited (can click "not interested" but limited query control)
+
+<strong>4. Information Diversity</strong>
+
+<strong>Empirical Findings:</strong>
+
+<strong>Search:</strong>
+• Source diversity: Moderate (news, academic, government)
+• Viewpoint diversity: Varies by query, some editorial balancing
+• Serendipity: Low (constrained by query semantics)
+
+<strong>Recommenders (YouTube):</strong>
+• Source diversity: High (many creators)
+• Viewpoint diversity: Low (algorithmic rabbit holes)
+• Serendipity: Moderate (lateral recommendations)
+
+<div class="info-box">
+<strong>Research Evidence:</strong><br>
+Ribeiro et al. (2020) found YouTube recommendations systematically lead users toward progressively more extreme content ("radicalization pathways"). Similar patterns less documented in search.
+</div>
+
+<strong>5. Filter Bubble Mechanisms</strong>
+
+<strong>Search Filter Bubbles:</strong>
+• Mechanism: Personalized ranking of retrieved results
+• Severity: Moderate (user can query diversely)
+• Awareness: Medium (users know they searched specific terms)
+
+<strong>Recommender Filter Bubbles:</strong>
+• Mechanism: Algorithmic curation of entire content stream
+• Severity: High (strong engagement optimization)
+• Awareness: Low (no query anchor point)
+
+<strong>Empirical Comparison:</strong>
+
+Studies comparing platforms find:
+• YouTube shows stronger ideological sorting than Google Search
+• Facebook News Feed more polarized than both
+• Search users more likely to encounter cross-cutting content
+• But: Search results still show measurable personalization effects
+
+<strong>6. Temporal Dynamics</strong>
+
+<strong>Search:</strong>
+• Episodic: Discrete search sessions
+• Query-driven topic switching
+• Less cumulative exposure pattern
+
+<strong>Recommenders:</strong>
+• Continuous: Extended viewing sessions
+• Algorithm-driven topic progression
+• Strong cumulative exposure effects (autoplay queues)
+
+<strong>Normative Implications:</strong>
+
+<strong>Democratic Information Access:</strong>
+
+<strong>Search advantages:</strong>
+✓ User retains query formulation control
+✓ Explicit information needs stated
+✓ Can deliberately seek diverse sources
+
+<strong>Recommender challenges:</strong>
+✗ System controls information exposure
+✗ Engagement optimization may conflict with information quality
+✗ Limited user agency in feed curation
+
+<strong>Policy Considerations:</strong>
+
+Different regulatory approaches needed:
+• Search: Ranking transparency, source diversity requirements
+• Recommenders: Engagement metric reform, exposure diversity, autoplay defaults
+
+<strong>Hybrid Systems:</strong>
+
+Note: Modern platforms blur these categories:
+• YouTube search combines both paradigms
+• Google Discover feed adds recommender to search platform
+• Hybrid risks: Engagement optimization infiltrating search quality standards
+
+The critical distinction: <em>Search personalizes responses to user intent. Recommenders personalize intent itself.</em>`,
+                "What are the normative implications of personalized political information access?": `Personalized search for political information raises fundamental questions for democratic theory:
+
+<strong>1. Epistemic Concerns</strong>
+
+<strong>Shared Reality and Common Knowledge:</strong>
+
+Democratic deliberation traditionally assumes citizens operate from shared factual foundation. Personalization potentially undermines this through:
+
+• <strong>Reality fragmentation:</strong> Different citizens access systematically different "facts"
+• <strong>Evidence divergence:</strong> Same political question yields different evidence bases
+• <strong>Epistemic sorting:</strong> Citizens increasingly segregated into distinct information ecosystems
+
+<div class="comparison-box">
+<strong>Philosophical tension:</strong><br>
+Liberal theory values individual autonomy in information seeking<br>
+BUT<br>
+Democratic theory requires sufficient common knowledge for collective decision-making
+</div>
+
+<strong>Question:</strong> Can democracy function when citizens don't share information infrastructure?
+
+<strong>2. Autonomy and Manipulation</strong>
+
+<strong>Informed Consent Paradox:</strong>
+
+Personalization claims to serve user preferences, but:
+• Users lack full knowledge of how profiles are constructed
+• Cannot easily audit what information is withheld
+• Difficult to consent to mechanisms they don't understand
+
+<strong>Algorithmic Paternalism:</strong>
+
+The system decides what information is "relevant" based on:
+• Predicted preferences (not stated preferences)
+• Engagement optimization (not information quality)
+• Historical behavior (potentially reinforcing biases)
+
+<em>Normative question:</em> Is personalization autonomy-enhancing (helps find preferred information) or autonomy-limiting (constrains information environment)?
+
+<strong>3. Equality and Justice</strong>
+
+<strong>Informational Inequality:</strong>
+
+Personalization may create tiered information access:
+
+<strong>Digitally literate users:</strong>
+• Understand personalization mechanisms
+• Employ diversification strategies
+• Access broader information landscape
+
+<strong>Less literate users:</strong>
+• Unaware of personalization
+• Accept results as objective
+• More susceptible to filter bubbles
+
+<div class="info-box">
+<strong>Justice concern:</strong> Personalization may systematically advantage already-privileged groups with higher digital literacy, exacerbating democratic inequality.
+</div>
+
+<strong>4. Public Sphere Fragmentation</strong>
+
+<strong>Habermasian Critique:</strong>
+
+Healthy democracy requires shared public sphere where:
+• Citizens encounter diverse viewpoints
+• Rational-critical debate occurs
+• Consensus emerges through argumentation
+
+Personalization threatens this by:
+• Eliminating common informational starting points
+• Reducing cross-cutting exposure
+• Creating "parallel public spheres" that don't interact
+
+<strong>Counter-argument:</strong> Public sphere was always fragmented (different newspapers, social circles). Personalization makes visible what was hidden.
+
+<strong>5. Accountability and Transparency</strong>
+
+<strong>Democratic Control Problem:</strong>
+
+In traditional media, citizens could:
+• Identify editorial decisions
+• Hold gatekeepers accountable
+• Demand changes through market or regulation
+
+With algorithmic curation:
+• Decision-making is opaque
+• No clear locus of accountability
+• Difficult to regulate without understanding mechanism
+
+<strong>Normative principle:</strong> Democratic legitimacy requires transparency in information infrastructure?
+
+<strong>6. Positive Liberty Considerations</strong>
+
+<strong>Capability Approach:</strong>
+
+From Amartya Sen's framework, ask:
+• Does personalization enhance capability for political participation?
+• Does it expand or constrain information freedoms?
+• Does it support autonomous political judgment formation?
+
+<strong>Mixed assessment:</strong>
+✓ May help citizens access relevant information efficiently
+✗ May limit exposure to information needed for informed citizenship
+✗ May reduce capacity to understand opposing viewpoints
+
+<strong>Competing Normative Frameworks:</strong>
+
+<strong>Consequentialist:</strong>
+Judge by outcomes: Does personalization lead to better or worse political decisions?
+<em>Empirical question, currently unresolved</em>
+
+<strong>Deontological:</strong>
+Judge by rights: Do citizens have right to unpersonalized information access?
+<em>Contested whether such right exists or is feasible</em>
+
+<strong>Virtue Ethics:</strong>
+Judge by character: Does personalization cultivate or undermine democratic virtues?
+<em>Potentially reduces intellectual humility, open-mindedness</em>
+
+<strong>Rawlsian:</strong>
+Judge by justice: Would citizens behind "veil of ignorance" choose personalization?
+<em>Depends on whether it systematically advantages particular groups</em>
+
+<strong>Policy Implications:</strong>
+
+Different normative commitments suggest different interventions:
+
+<strong>If prioritizing shared reality:</strong>
+→ Reduce personalization for political queries
+→ Create common information spaces
+
+<strong>If prioritizing autonomy:</strong>
+→ Increase transparency and user control
+→ Enable easy personalization opt-out
+
+<strong>If prioritizing equality:</strong>
+→ Ensure access to diverse information regardless of digital literacy
+→ Regulate to prevent systematic disadvantage
+
+<strong>If prioritizing democratic deliberation:</strong>
+→ Design for productive disagreement exposure
+→ Balance relevance with diversity
+
+<strong>Unresolved Tensions:</strong>
+
+1. <strong>Personalization vs. Serendipity:</strong> Relevance conflicts with discovery
+2. <strong>Efficiency vs. Breadth:</strong> Quick answers conflict with comprehensive understanding
+3. <strong>Individual vs. Collective:</strong> User satisfaction conflicts with democratic information needs
+4. <strong>Present vs. Future:</strong> Immediate engagement conflicts with long-term information health
+
+<em>Central normative question remains:</em> Should information infrastructure be designed for individual satisfaction or collective democratic functioning? Can these objectives be reconciled?
+
+This is not merely technical but fundamentally political question about what democracy requires.`
+            }
+        };
+
+        // Initialize with beginner mode
+        function updateInterface() {
+            initialMessage.innerHTML = initialMessages[currentLevel];
+            updateQuickActions();
+        }
+
+        function updateQuickActions() {
+            quickActionButtons.innerHTML = '';
+            followUpQuestions[currentLevel].forEach(question => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-action-btn';
+                btn.textContent = question;
+                btn.dataset.question = question;
+                quickActionButtons.appendChild(btn);
+            });
+
+            // Add click handlers
+            document.querySelectorAll('.quick-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    handleUserMessage(this.dataset.question);
+                });
+            });
+        }
+
+        // Level switching
+        levelBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentLevel = this.dataset.level;
+                levelBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Clear chat and reinitialize
+                chatMessages.innerHTML = `
+                    <div class="message bot">
+                        <div class="message-avatar">S</div>
+                        <div class="message-content" id="initialMessage"></div>
+                    </div>
+                `;
+                updateInterface();
+            });
+        });
+
+        // Send button
+        sendBtn.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                handleUserMessage(message);
+                userInput.value = '';
+            }
+        });
+
+        // Enter key
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        function handleUserMessage(message) {
+            addMessage('user', message);
+            
+            // Find matching response
+            const levelResponses = responses[currentLevel];
+            let response = null;
+            
+            for (const [key, value] of Object.entries(levelResponses)) {
+                if (message.toLowerCase().includes(key.toLowerCase()) || 
+                    key.toLowerCase().includes(message.toLowerCase())) {
+                    response = value;
+                    break;
+                }
+            }
+            
+            // Default response if no match
+            if (!response) {
+                if (currentLevel === 'beginner') {
+                    response = `That's an interesting question! 
+
+Let me help you understand how search engines work with political topics.
+
+The main thing to remember is:
+• Search results are personalized based on your history
+• Different people see different results
+• This can create "bubbles" where you only see one perspective
+
+Try clicking one of the follow-up questions above, and I'll explain in simple terms!`;
+                } else {
+                    response = `Your question "${message}" touches on important aspects of search personalization.
+
+Key considerations:
+• Algorithmic ranking involves multiple optimization objectives
+• Personalization interacts with query semantics and user history
+• Empirical evidence suggests moderate effects on political attitudes
+• Normative implications remain contested in democratic theory
+
+I recommend exploring the follow-up questions above for detailed analysis of specific mechanisms and implications.`;
+                }
+            }
+            
+            setTimeout(() => {
+                showTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage('bot', response);
+                }, 1500);
+            }, 300);
+        }
+
+        function addMessage(type, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'bot' ? 'S' : 'U';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.innerHTML = text;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message bot';
+            indicator.id = 'typingIndicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'S';
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message-content typing-indicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            
+            indicator.appendChild(avatar);
+            indicator.appendChild(typingDiv);
+            chatMessages.appendChild(indicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        // Initialize
+        updateInterface();
+    </script>
+</body>
+</html>
