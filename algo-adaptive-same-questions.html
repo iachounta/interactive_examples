@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samy - Dein adaptiver Such-Erklärer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Simulated Google Search Page */
+        .search-page {
+            flex: 1;
+            background: #fff;
+            overflow-y: auto;
+            padding: 20px;
+            border-right: 1px solid #dadce0;
+        }
+
+        .search-header {
+            max-width: 652px;
+            margin: 0 auto 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .search-stats {
+            color: #70757a;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            max-width: 652px;
+            margin: 0 auto;
+        }
+
+        .result {
+            margin-bottom: 32px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .result:hover {
+            background: #f8f9fa;
+        }
+
+        .result.highlighted {
+            background: #e8f0fe;
+            border-left: 3px solid #1a73e8;
+            padding-left: 13px;
+        }
+
+        .result-url {
+            font-size: 14px;
+            color: #202124;
+            margin-bottom: 3px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            color: #1a0dab;
+            margin-bottom: 3px;
+            line-height: 1.3;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-snippet {
+            font-size: 14px;
+            color: #4d5156;
+            line-height: 1.58;
+        }
+
+        .result-badge {
+            display: inline-block;
+            background: #1a73e8;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        /* Chatbot Side Panel */
+        .chatbot-panel {
+            width: 420px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        }
+
+        .chatbot-header {
+            background: #1a73e8;
+            color: white;
+            padding: 16px;
+            font-weight: 500;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chatbot-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chatbot-icon {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .knowledge-level-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .level-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .level-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .level-btn.active {
+            background: white;
+            color: #1a73e8;
+            border-color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .message.bot .message-avatar {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #34a853;
+            color: white;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.user .message-content {
+            background: #e8f0fe;
+        }
+
+        .message-content strong {
+            color: #1a73e8;
+            font-weight: 600;
+        }
+
+        .message-content em {
+            font-style: italic;
+            color: #5f6368;
+        }
+
+        .message-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin: 6px 0;
+        }
+
+        .level-indicator {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .quick-actions {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid #dadce0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .quick-actions-title {
+            font-size: 12px;
+            color: #5f6368;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .quick-action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .quick-action-btn {
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .quick-action-btn:hover {
+            background: #e8f0fe;
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+
+        .chat-input-container {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #dadce0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #dadce0;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-input input:focus {
+            border-color: #1a73e8;
+        }
+
+        .chat-input button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .chat-input button:hover {
+            background: #1557b0;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #5f6368;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .metric-tag {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+            font-weight: 500;
+        }
+
+        .info-box {
+            background: #f1f3f4;
+            border-left: 3px solid #1a73e8;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .comparison-box {
+            background: #fef7e0;
+            border: 1px solid #f9ab00;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Simulated Google Search Page -->
+        <div class="search-page">
+            <div class="search-header">
+                <div class="search-box">
+                    <input type="text" value="erhöht migration die kriminalität?" readonly>
+                </div>
+                <div class="search-stats">Ungefähr 8.340.000 Ergebnisse (0,41 Sekunden)</div>
+            </div>
+            
+            <div class="search-results">
+                <div class="result" data-result="1">
+                    <div class="result-url">https://www.brennancenter.org › unsere-arbeit › analyse</div>
+                    <div class="result-title">Die Beziehung zwischen Migration und Kriminalität<span class="result-badge">FORSCHUNG</span></div>
+                    <div class="result-snippet">Mehrere peer-reviewte Studien zeigen konsistent, dass es keine Hinweise dafür gibt, dass Migration die Kriminalitätsraten erhöht. Forschungen über Jahrzehnte hinweg zeigen, dass Migranten seltener Verbrechen begehen als im Land geborene Bürger...</div>
+                </div>
+
+                <div class="result" data-result="2">
+                    <div class="result-url">https://www.cato.org › migration › forschung</div>
+                    <div class="result-title">Migration und Kriminalität: Was die Forschung sagt</div>
+                    <div class="result-snippet">Analysen von FBI-Daten und akademischer Forschung zeigen, dass Gebiete mit höherer Migration sinkende Kriminalitätsraten erlebt haben. Studien zeigen, dass sowohl legale als auch undokumentierte Migranten niedrigere Inhaftierungsraten haben...</div>
+                </div>
+
+                <div class="result" data-result="3">
+                    <div class="result-url">https://news.stanford.edu › forschung › migration-kriminalitaet</div>
+                    <div class="result-title">Stanford-Studie: Migration erhöht Kriminalitätsraten nicht</div>
+                    <div class="result-snippet">Stanford-Forschung, die 150 Jahre Zensusdaten analysiert, findet keinen Zusammenhang zwischen Migration und Kriminalität. Die Studie widerlegt gängige Missverständnisse und zeigt, dass Kriminalitätsraten sanken, während Migration zunahm...</div>
+                </div>
+
+                <div class="result" data-result="4">
+                    <div class="result-url">https://www.heritage.org › migration › kommentar</div>
+                    <div class="result-title">Fragen zu Migration und Kriminalitätsstatistiken</div>
+                    <div class="result-snippet">Während viele Studien behaupten, Migration erhöhe die Kriminalität nicht, argumentieren Kritiker, dass Probleme bei der Datenerhebung die tatsächlichen Auswirkungen verschleiern. Fragen bleiben, wie Verbrechen von undokumentierten Migranten erfasst und gemeldet werden...</div>
+                </div>
+
+                <div class="result" data-result="5">
+                    <div class="result-url">https://twitter.com › suche</div>
+                    <div class="result-title">Beiträge über Migration und Kriminalität - X (Twitter)</div>
+                    <div class="result-snippet">Eilmeldung: Weiteres Gewaltverbrechen von illegalem Migranten begangen. Wann werden unsere Führer die Bürger schützen? Das passiert jeden Tag, aber die Medien berichten nicht darüber. #Migration #Kriminalität [Trending-Thema]</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatbot Side Panel -->
+        <div class="chatbot-panel">
+            <div class="chatbot-header">
+                <div class="chatbot-header-left">
+                    <div class="chatbot-icon">🔍</div>
+                    <span>Samy - Such-Erklärer</span>
+                </div>
+                <div class="knowledge-level-selector">
+                    <button class="level-btn active" data-level="beginner">Einfach</button>
+                    <button class="level-btn" data-level="experienced">Fortgeschritten</button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    <div class="message-avatar">S</div>
+                    <div class="message-content" id="initialMessage">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <div class="quick-actions-title">Folgefragen:</div>
+                <div class="quick-action-buttons" id="quickActionButtons">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input">
+                    <input type="text" id="userInput" placeholder="Frage Samy zu diesen Ergebnissen...">
+                    <button id="sendBtn">Senden</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 'beginner';
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const levelBtns = document.querySelectorAll('.level-btn');
+        const quickActionButtons = document.getElementById('quickActionButtons');
+        const initialMessage = document.getElementById('initialMessage');
+
+        // Initial messages for each level
+        const initialMessages = {
+            beginner: `<div class="level-indicator">EINFACHE SPRACHE</div>
+Hallo, ich bin Samy, dein Such-Erklärer!
+
+<strong>Warum du diese Ergebnisse siehst</strong>
+
+Wenn du "Erhöht Migration die Kriminalität?" suchst, zeigt die Suchmaschine nicht allen die gleichen Ergebnisse. Sie versucht zu erraten, welche Art von Information für DICH am relevantesten ist.
+
+Dazu nutzt sie einige deiner persönlichen Daten, zum Beispiel:
+• wonach du vorher gesucht hast
+• welche Links oder Videos du normalerweise anklickst
+• deinen Standort und deine Sprache
+• ob du oft Nachrichten, Blogs oder Videos liest
+
+Basierend darauf kann die Suchmaschine dir mehr Artikel zeigen, die zu deinen bisherigen Interessen oder Bedenken passen. Wenn du zuvor auf kriminalitätsbezogene Nachrichten geklickt hast, siehst du vielleicht mehr Ergebnisse, die sich auf Risiken konzentrieren. Wenn du oft soziale oder akademische Inhalte liest, siehst du stattdessen vielleicht Studien oder Erklärungen.
+
+<strong>Das bedeutet:</strong> Die Ergebnisse können dich langsam in eine Richtung drängen, wie du das Thema siehst, obwohl auch andere Perspektiven existieren.`,
+            experienced: `<div class="level-indicator">FORTGESCHRITTENER MODUS</div>
+Hallo, ich bin Samy, dein Such-Erklärer!
+
+<strong>Wie Personalisierung diese Suchergebnisse formt</strong>
+
+Wenn du die Suchanfrage "Erhöht Migration die Kriminalität?" stellst, wendet die Suchmaschine algorithmisches Ranking an, das teilweise personalisiert ist. Diese Personalisierung basiert auf abgeleiteten Nutzercharakteristiken, die aus mehreren Datenquellen stammen.
+
+Dazu gehören:
+• dein Such- und Klickverlauf
+• langfristige Browsing-Muster über Websites und Apps hinweg
+• Engagement mit politisch geframten Inhalten (z.B. Nachrichten, Videos, Meinungsbeiträge)
+• kontextuelle Signale wie Standort, Gerät und Sprache
+
+Der Algorithmus ruft nicht einfach die "beste" Antwort ab, sondern priorisiert Quellen, die mit deinen vorhergesagten Interessen und früheren Engagement-Mustern übereinstimmen. Als Ergebnis können dir gezeigt werden:
+• sicherheitsorientierte Narrative, die Kriminalitätsstatistiken betonen, oder
+• soziologische und kriminologische Forschung, die strukturelle Faktoren und Gegenbeweise hervorhebt.
+
+<strong>Konsequenz:</strong> Im Laufe der Zeit kann diese Personalisierung einen bestimmten interpretativen Rahmen stabilisieren. Anstatt dich der vollen Bandbreite akademischer und politischer Perspektiven auszusetzen, kann das System bestehende Annahmen verstärken und dadurch politische Einstellungen und Risikowahrnehmungen formen, ohne dass du dir dessen explizit bewusst bist.`
+        };
+
+        // Follow-up questions - SAME for both levels
+        const followUpQuestions = {
+            beginner: [
+                "Warum zeigt Google verschiedenen Personen unterschiedliche Ergebnisse?",
+                "Welche Informationen über mich nutzt die Suchmaschine?",
+                "Beeinflusst mein Suchverlauf wirklich, was ich sehe?",
+                "Würde jemand anderes andere Ergebnisse für dieselbe Frage erhalten?",
+                "Wie kann ich mehr als eine Seite dieses Themas sehen?",
+                "Kann ich personalisierte Suchergebnisse ausschalten?",
+                "Was passiert, wenn jeder unterschiedliche Suchergebnisse erhält?",
+                "Was passiert, wenn ich im privaten oder Inkognito-Modus suche?"
+            ],
+            experienced: [
+                "Warum zeigt Google verschiedenen Personen unterschiedliche Ergebnisse?",
+                "Welche Informationen über mich nutzt die Suchmaschine?",
+                "Beeinflusst mein Suchverlauf wirklich, was ich sehe?",
+                "Würde jemand anderes andere Ergebnisse für dieselbe Frage erhalten?",
+                "Wie kann ich mehr als eine Seite dieses Themas sehen?",
+                "Kann ich personalisierte Suchergebnisse ausschalten?",
+                "Was passiert, wenn jeder unterschiedliche Suchergebnisse erhält?",
+                "Was passiert, wenn ich im privaten oder Inkognito-Modus suche?"
+            ]
+        };
+
+        // Responses for follow-up questions
+        const responses = {
+            beginner: {
+                "Warum zeigt Google verschiedenen Personen unterschiedliche Ergebnisse?": `Google versucht zu erraten, was DU sehen möchtest, basierend auf:
+
+• <strong>Deinen bisherigen Suchen</strong> - Wenn du vorher nach "Kriminalitätsnachrichten" gesucht hast
+• <strong>Was du angeklickt hast</strong> - Nachrichtenartikel vs. Forschungsarbeiten
+• <strong>Wo du lebst</strong> - Verschiedene Regionen sehen verschiedene Quellen
+• <strong>Deinen YouTube-Videos</strong> - Wenn du bei Google angemeldet bist
+
+<strong>Beispiel:</strong>
+Person A liest oft Kriminalitätsnachrichten → sieht Artikel über Migrantenkriminalität
+Person B liest oft Forschung → sieht akademische Studien, die keinen Zusammenhang zeigen
+
+<strong>Gleiche Frage, völlig unterschiedliche Ergebnisse!</strong>`,
+
+                "Welche Informationen über mich nutzt die Suchmaschine?": `Google sammelt:
+
+<strong>1. Jede Suche, die du eingibst</strong>
+Gespeichert und für Muster analysiert
+
+<strong>2. Worauf du klickst</strong>
+Nachrichten? Blogs? Videos? Akademische Arbeiten?
+
+<strong>3. Wo du bist</strong>
+Stadt, Land, sogar Nachbarschaft
+
+<strong>4. Dein YouTube-Verlauf</strong>
+Welche Videos du ansiehst (wenn angemeldet)
+
+<strong>5. Zeitmuster</strong>
+Wann du suchst, wie lange du liest
+
+<div class="info-box">
+Dies geschieht automatisch. Du siehst es nicht passieren.
+</div>`,
+
+                "Beeinflusst mein Suchverlauf wirklich, was ich sehe?": `<strong>Ja! Hier ist der Beweis:</strong>
+
+<strong>Du hast letzten Monat gesucht:</strong>
+• "lokale Kriminalitätsnachrichten"
+• "Nachbarschaftssicherheit"
+• "Kriminalitätsstatistiken"
+
+<strong>Jetzt suchst du: "Erhöht Migration die Kriminalität?"</strong>
+
+→ Google denkt: "Diese Person interessiert sich für Kriminalität und Sicherheit"
+→ Zeigt dir: Artikel über Kriminalitätsrisiken, Statistiken, Warnungen
+
+<strong>Jemand anderes hat gesucht:</strong>
+• "Flüchtlingshilfe"
+• "Migrationsvorteile"
+• "kulturelle Vielfalt"
+
+→ Google denkt: "Diese Person sieht Migration positiv"
+→ Zeigt ihnen: Forschungsstudien, Menschenrechtsartikel
+
+<div class="comparison-box">
+<strong>Ergebnis:</strong> Ihr beide denkt, IHR seht die Wahrheit. Aber ihr seht völlig unterschiedliche Informationen!
+</div>`,
+
+                "Würde jemand anderes andere Ergebnisse für dieselbe Frage erhalten?": `<strong>Absolut! Beispiel:</strong>
+
+<strong>Person A:</strong>
+Lebt in Texas, schaut Fox News-Clips
+→ Sieht: Politische Kommentare, Kriminalitätsstatistiken
+
+<strong>Person B:</strong>
+Lebt in Kalifornien, liest akademische Artikel
+→ Sieht: Universitätsforschung, Datenanalyse
+
+<strong>Person C:</strong>
+Schaut YouTube-Videos, folgt Influencern
+→ Sieht: Videoinhalte, Social-Media-Beiträge
+
+<strong>Alle drei haben genau dieselben Worte eingegeben!</strong>
+
+<div class="info-box">
+Jeder denkt, er sieht "was Google gefunden hat".
+Tatsächlich sieht er: "was Google denkt, dass ER sehen möchte".
+</div>`,
+
+                "Wie kann ich mehr als eine Seite dieses Themas sehen?": `<strong>Praktische Schritte:</strong>
+
+<strong>1. Verwende Privat-/Inkognito-Modus</strong>
+Öffnet ein sauberes Fenster mit weniger Personalisierung
+
+<strong>2. Probiere verschiedene Worte</strong>
+• "Migration Kriminalität Forschung" = akademische Ergebnisse
+• "Migration Kriminalität Nachrichten" = Nachrichtenartikel
+• "Migration Kriminalität Statistiken" = Daten
+
+<strong>3. Klicke auf verschiedene Quellentypen</strong>
+Nicht nur Nachrichten. Probiere .edu-Seiten (Universitäten)
+
+<strong>4. Verwende DuckDuckGo</strong>
+Suchmaschine, die dich nicht verfolgt
+
+<strong>5. Lösche deinen Verlauf</strong>
+myactivity.google.com → Verlauf löschen
+
+<div class="info-box">
+<strong>Schnelltest:</strong> Wenn ALLE Ergebnisse übereinstimmen, ist das verdächtig. Echte Themen haben mehrere Seiten.
+</div>`,
+
+                "Kann ich personalisierte Suchergebnisse ausschalten?": `<strong>Du kannst es reduzieren (nicht komplett ausschalten):</strong>
+
+<strong>Einfache Optionen:</strong>
+
+✅ <strong>Von Google abmelden</strong>
+Weniger Daten über dich = weniger Personalisierung
+
+✅ <strong>Inkognito-Modus verwenden</strong>
+Drücke Strg+Umschalt+N (Chrome)
+
+✅ <strong>Suchverlauf pausieren</strong>
+Gehe zu myactivity.google.com → "Web- & App-Aktivitäten" ausschalten
+
+✅ <strong>Stattdessen DuckDuckGo verwenden</strong>
+Verfolgt oder personalisiert nicht
+
+<div class="info-box">
+<strong>Realitätscheck:</strong> Google kennt immer noch deinen Standort und dein Gerät. Echte Anonymität ist schwer. Aber diese Schritte helfen sehr!
+</div>`,
+
+                "Was passiert, wenn jeder unterschiedliche Suchergebnisse erhält?": `<strong>Probleme auf gesellschaftlicher Ebene:</strong>
+
+<strong>1. Menschen leben in verschiedenen Realitäten</strong>
+Du siehst: "Migration erhöht Kriminalität nicht"
+Nachbar sieht: "Migration verursacht Kriminalitätswelle"
+→ Ihr könnt euch nicht mal auf grundlegende Fakten einigen!
+
+<strong>2. Gespräche brechen zusammen</strong>
+Schwierig zu diskutieren, wenn ihr völlig unterschiedliche Informationen gesehen habt
+
+<strong>3. Leicht zu manipulieren</strong>
+Zeige verschiedenen Menschen verschiedene "Fakten", um sie zu beeinflussen
+
+<strong>4. Demokratie wird schwieriger</strong>
+Wähler treffen Entscheidungen basierend auf unterschiedlichen Informationen
+
+<div class="comparison-box">
+<strong>Früher:</strong> Alle schauten dieselben TV-Nachrichten<br>
+<strong>Jetzt:</strong> Jeder bekommt personalisierte Informationsblase
+</div>`,
+
+                "Was passiert, wenn ich im privaten oder Inkognito-Modus suche?": `<strong>Was es TUT:</strong>
+✅ Speichert Suchen nicht auf deinem Gerät
+✅ Verwendet deine Google-Kontodaten nicht
+✅ Reduziert etwas Personalisierung
+
+<strong>Was es NICHT tut:</strong>
+❌ Versteckt deine IP-Adresse (Standort) nicht
+❌ Stoppt Personalisierung nicht vollständig
+❌ Dein Internetanbieter sieht deine Suchen trotzdem
+
+<strong>Teste es selbst:</strong>
+1. Suche normal: "erhöht migration kriminalität"
+2. Suche inkognito: gleiche Frage
+3. Vergleiche Ergebnisse → Du wirst EINIGE Unterschiede sehen
+
+<div class="info-box">
+<strong>Besserer Datenschutz:</strong> Verwende DuckDuckGo + VPN für mehr Schutz
+</div>`
+            },
+            experienced: {
+                "Welche Nutzersignale sind am einflussreichsten beim Ranking politischer Suchergebnisse?": `<strong>Rangiert nach Einfluss:</strong>
+
+<strong>1. Langfristige Klickmuster</strong> (Am stärksten)
+• Welche Quellentypen: Nachrichten vs. akademisch
+• Politische Ausrichtung angeklickter Inhalte
+• 3+ Monate erstellen stabiles Profil
+
+<strong>2. Geografische + sprachliche Signale</strong>
+• Standort bestimmt lokale Nachrichtenpriorisierung
+• Sprache beeinflusst Quellenauswahl
+• Regionale politische Diskursrahmung
+
+<strong>3. Plattformübergreifendes Engagement</strong>
+• YouTube-Watch-History-Integration
+• Gmail-Inhaltsanalyse (wenn opted-in)
+• Videokonsum → ideologisches Profiling
+
+<strong>4. Verweildauer + Absprungrate</strong>
+• Zeit auf Seite signalisiert Zufriedenheit
+• Sofortige Rückkehr zeigt schlechte Übereinstimmung
+• Informiert zukünftiges Ranking
+
+<div class="info-box">
+<strong>Wichtiger Befund:</strong> Hannak et al. (2013) zeigten, dass ideologisch konsistentes Browsing messbar unterschiedliche SERPs innerhalb von 2-3 Wochen produziert.
+</div>
+
+<strong>Limitation:</strong> Signale operieren durch neuronale Netze—individuelle Attribution schwierig.`,
+
+                "Wie interagiert Personalisierung mit Anfrage-Framing und Formulierung?": `<strong>Multiplikativer Effekt:</strong>
+
+Anfrage-Framing + Personalisierung = Zusammengesetzte Filterung
+
+<strong>Beispiel:</strong>
+
+<span class="metric-tag">Anfrage A:</span> "illegale migration kriminalitätsstatistiken"
+→ Primed: Sicherheits-/Strafverfolgungsrahmen
+→ + Nutzerverlauf: konservatives Nachrichtenengagement
+→ Ergebnis: Stark kriminalitätsfokussierter Inhalt
+
+<span class="metric-tag">Anfrage B:</span> "migration kriminologische forschung"
+→ Primed: akademischer/Forschungsrahmen
+→ + Nutzerverlauf: wissenschaftliches Engagement
+→ Ergebnis: Peer-reviewte Studien
+
+<strong>Drei Mechanismen:</strong>
+
+<strong>1. Semantisches Priming</strong>
+Lexikalische Wahlen aktivieren unterschiedliche Abrufpfade
+
+<strong>2. Absichtsklassifikation</strong>
+Gleiche Worte → verschiedene Absichten basierend auf Nutzerprofil
+
+<strong>3. Autocomplete-Personalisierung</strong>
+Anfragevorschläge spiegeln vorhergesagte Interessen wider
+→ Erzeugt Pfadabhängigkeit
+
+<div class="comparison-box">
+<strong>Kritischer Punkt:</strong> Nutzer sind sich nicht bewusst, dass vorgeschlagene Anfragen personalisiert sind, nicht universell.
+</div>`,
+
+                "Inwieweit trägt Such-Personalisierung zu Filterblasen bei?": `<strong>Evidenzzusammenfassung:</strong>
+
+<strong>Gemessene Effekte:</strong>
+• 11,7% durchschnittliche Variation in URLs (Hannak et al., 2013)
+• Bis zu 25% bei politisch umstrittenen Anfragen
+• Systematische ideologische Sortierung von Quellen
+
+<strong>ABER erschwerende Faktoren:</strong>
+
+<strong>1. Baseline-Filterung existiert</strong>
+Auch nicht-personalisierte Suche hat:
+• Autoritätsbias (etablierte Quellen)
+• Aktualitätsbias (neuerer Inhalt)
+→ Frage: Wie viel fügt Personalisierung HINZU?
+
+<strong>2. Aktive Diversifizierung</strong>
+Google implementiert:
+• Bewusste Quellenvielfalt-Injektion
+• "Top Stories" redaktionelle Balance
+• Autoritativer Quellen-Boost
+
+<strong>3. Nutzeragentur zählt</strong>
+Nutzer können überwinden durch:
+• Anfrage-Umformulierung
+• Direkte Quellennavigation
+• Inkognito-Modus-Nutzung
+
+<div class="info-box">
+<strong>Konsens:</strong> Personalisierung schafft Filterblasen-<em>Affordanzen</em>, aber eliminiert Nutzeragentur nicht. Effekt: moderat (10-25% Variation), nicht deterministisch.
+</div>
+
+<strong>Verglichen mit YouTube:</strong> Suche zeigt WENIGER Polarisierung als Empfehlungssysteme.`,
+
+                "Wie stabil sind personalisierte Rankings über die Zeit?": `<strong>Zeitliche Dynamiken:</strong>
+
+<strong>Kurzfristig (Tage-Wochen):</strong>
+• Anpassung: 3-5 Suchen für messbaren Effekt
+• Plateau: ~10-15 Anfragen zum Thema
+• Nachrichtenzyklen: Überschreiben temporär Personalisierung
+
+<strong>Langfristig (Monate):</strong>
+• Profilkristallisierung: 3 Monate für Stabilität
+• Top-10-Überlappung: 70-80% nach 1 Monat
+• 60-70% nach 6 Monaten
+
+<strong>Zerfallsfunktion:</strong>
+• Letzte 7 Tage: Hohes Gewicht (0,7-0,9)
+• Letzte 30 Tage: Mittel (0,4-0,6)
+• 6+ Monate: Baseline (0,2-0,3)
+
+<div class="info-box">
+<strong>Implikation:</strong> Hohe Stabilität = persistente Filterblasen. Schwierig, etablierte Informationsökosysteme zu verlassen.
+</div>
+
+<strong>Moderatoren:</strong>
+• Aktive Nutzer: Stabilere Profile
+• Kontroverse Themen: Höhere Stabilität
+• Algorithmus-Updates: Vierteljährliche Volatilität`,
+
+                "Wie balanciert Google Relevanz, Autorität und Diversität bei politischen Anfragen?": `<strong>Multi-Ziel-Optimierung:</strong>
+
+<strong>Relevanz:</strong>
+• BERT semantisches Matching
+• TF-IDF Keyword-Scoring
+• + Personalisierungsschicht (Klickverlauf)
+
+<strong>Autorität:</strong>
+• PageRank + Domain-Trust
+• .edu/.gov Boost
+• Faktencheck-Priorisierung
+
+<strong>Diversität:</strong>
+• Quellentypenmischung (Nachrichten/akademisch/gov)
+• Ideologische Ausbalancierung (kontroverse Anfragen)
+• "Top Stories" redaktionelle Standards
+
+<strong>Spannungspunkte:</strong>
+
+<span class="metric-tag">Relevanz vs. Diversität:</span>
+Gegeneinstellungsquellen verringern sofortige Zufriedenheit
+
+<span class="metric-tag">Autorität vs. Zugänglichkeit:</span>
+Akademische Arbeiten = hohe Autorität, niedriges Engagement
+
+<span class="metric-tag">Personalisierung vs. Diversität:</strong>
+Nutzerspezifische Relevanz kollidiert mit vielfältigen Perspektiven
+
+<div class="comparison-box">
+<strong>Für "Migration Kriminalität" Anfrage:</strong><br>
+~70% Forschung/Nachrichten (Autorität)<br>
+~20% Meinung/Kommentar (Diversität)<br>
+~10% Social Media (Relevanz/Aktualität)
+</div>
+
+<strong>Für politische Anfragen:</strong> Google reduziert Berichten zufolge Personalisierungsgewicht und erhöht Autoritätsschwellen.`,
+
+                "Welche empirischen Belege gibt es für politische Meinungsverstärkung durch Suche?": `<strong>Schlüsselstudien:</strong>
+
+<strong>1. Epstein & Robertson (2015) - SEME</strong>
+• Verzerrte Rankings → 20% Stimmenwechsel (unentschlossene Wähler)
+• Labor-Setting, extreme Verzerrungsbedingung
+
+<strong>2. Hannak et al. (2013) - Sock Puppets</strong>
+• Gegensätzliche politische Profile
+• Ergebnis: 11,7% URL-Variation
+
+<strong>3. Robertson et al. (2018) - Longitudinal</strong>
+• 3-Monats-Tracking: Suche → Exposition → Einstellungen
+• Effekt: Klein aber signifikant (d = 0,15-0,25)
+
+<strong>4. Kulshrestha et al. (2017)</strong>
+• Suche zeigt WENIGER Polarisierung als Social Media
+• Nutzer suchen aktiv nach diversen Quellen mehr bei Suche
+
+<div class="info-box">
+<strong>Meta-Analyse:</strong><br>
+• Kontrollierte Settings: d = 0,20-0,40<br>
+• Naturalistisch: d = 0,10-0,25<br>
+• Moderiert durch: politisches Interesse, Medienkompetenz
+</div>
+
+<strong>Null-Befunde:</strong>
+• Nechushtai & Lewis (2019): Begrenzte Filterblasen-Evidenz
+• Haim et al. (2018): Nutzeranfragewahlen > Personalisierung
+
+<strong>Konsens:</strong> Schwache bis moderate Evidenz. Effektgrößen klein in naturalistischen Settings. Nutzeragentur zählt.`,
+
+                "Wie unterscheidet sich Such-Personalisierung von Empfehlungssystemen (z.B. YouTube)?": `<strong>Fundamentale Unterschiede:</strong>
+
+<strong>Suche (Pull):</strong>
+• Nutzer initiiert mit Anfrage
+• Aktive Informationssuche
+• Sitzungsbasiert
+• Nutzer kontrolliert Thema
+
+<strong>Empfehlungen (Push):</strong>
+• System schlägt Inhalt vor
+• Passive Konsumption
+• Kontinuierliches Autoplay
+• Algorithmus kontrolliert Sequenz
+
+<strong>Optimierungsziele:</strong>
+
+<span class="metric-tag">Suche:</span> Relevanz + Autorität + Diversität
+<span class="metric-tag">YouTube:</span> Engagement + Watchtime
+
+<div class="comparison-box">
+<strong>Kritischer Unterschied:</strong> YouTube optimiert für Engagement ≠ Informationsqualität
+</div>
+
+<strong>Filterblasen-Schwere:</strong>
+
+<strong>Suche:</strong>
+• Quellendiversität: Moderat
+• Nutzer kann divers anfragen
+• Bewusstsein: Mittel (kennt Anfragewörter)
+
+<strong>YouTube:</strong>
+• Quellendiversität: Hoch (viele Creators)
+• Perspektivendiversität: Niedrig (Kaninchenlöcher)
+• Bewusstsein: Niedrig (kein Anfrage-Anker)
+
+<strong>Evidenz:</strong>
+Ribeiro et al. (2020): YouTube führt systematisch zu extremerem Inhalt. Suche zeigt weniger Radikalisierung.
+
+<strong>Kerninsight:</strong> Suche personalisiert Antworten auf Nutzerabsicht. Empfehlungen personalisieren die Absicht selbst.`,
+
+                "Was sind die normativen Implikationen personalisierter politischer Informationszugänge?": `<strong>Fünf demokratische Bedenken:</strong>
+
+<strong>1. Epistemische Fragmentierung</strong>
+Bürger greifen auf systematisch unterschiedliche "Fakten" zu
+→ Untergräbt gemeinsame Realität, die für Deliberation nötig ist
+
+<strong>2. Autonomieparadox</strong>
+• Behauptet, Präferenzen zu dienen
+• Aber: Nutzer können nicht prüfen, was vorenthalten wird
+• Vorhergesagte Präferenzen ≠ erklärte Präferenzen
+
+<strong>3. Informationelle Ungleichheit</strong>
+Digitale Kompetenz schafft gestuften Zugang:
+• Kompetente Nutzer: Verstehen + umgehen Personalisierung
+• Andere: Akzeptieren Ergebnisse als objektiv
+→ Verschärft demokratische Ungleichheit
+
+<strong>4. Öffentliche Sphärenfragmentierung</strong>
+Habermassche Sorge: Kein gemeinsamer informationeller Ausgangspunkt
+→ Parallele Sphären, die nicht interagieren
+
+<strong>5. Rechenschaftsdefizit</strong>
+• Opake algorithmische Entscheidungen
+• Kein klarer Ort demokratischer Kontrolle
+• Schwierig zu regulieren ohne Transparenz
+
+<div class="info-box">
+<strong>Zentrale Spannung:</strong><br>
+Individuelle Zufriedenheit vs. kollektive demokratische Funktionsweise<br>
+Können diese versöhnt werden?
+</div>
+
+<strong>Konkurrierende Frameworks:</strong>
+• <strong>Konsequentialistisch:</strong> Produziert es bessere Entscheidungen? (Empirisch unklar)
+• <strong>Deontologisch:</strong> Recht auf unpersonalisierten Zugang? (Umstritten)
+• <strong>Rawlsianisch:</strong> Würden Bürger hinter Schleier dies wählen? (Hängt von Verteilung ab)
+
+<strong>Schlüsselfrage:</strong> Sollte Informationsinfrastruktur individuellen oder demokratischen Bedürfnissen dienen?`
+            }
+        };
+
+        // Initialize with beginner mode
+        function updateInterface() {
+            initialMessage.innerHTML = initialMessages[currentLevel];
+            updateQuickActions();
+        }
+
+        function updateQuickActions() {
+            quickActionButtons.innerHTML = '';
+            followUpQuestions[currentLevel].forEach(question => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-action-btn';
+                btn.textContent = question;
+                btn.dataset.question = question;
+                quickActionButtons.appendChild(btn);
+            });
+
+            // Add click handlers
+            document.querySelectorAll('.quick-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    handleUserMessage(this.dataset.question);
+                });
+            });
+        }
+
+        // Level switching
+        levelBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentLevel = this.dataset.level;
+                levelBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Clear chat and reinitialize
+                chatMessages.innerHTML = `
+                    <div class="message bot">
+                        <div class="message-avatar">S</div>
+                        <div class="message-content" id="initialMessage"></div>
+                    </div>
+                `;
+                updateInterface();
+            });
+        });
+
+        // Send button
+        sendBtn.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                handleUserMessage(message);
+                userInput.value = '';
+            }
+        });
+
+        // Enter key
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        function handleUserMessage(message) {
+            addMessage('user', message);
+            
+            // Find matching response
+            const levelResponses = responses[currentLevel];
+            let response = null;
+            
+            for (const [key, value] of Object.entries(levelResponses)) {
+                if (message.toLowerCase().includes(key.toLowerCase()) || 
+                    key.toLowerCase().includes(message.toLowerCase())) {
+                    response = value;
+                    break;
+                }
+            }
+            
+            // Default response if no match
+            if (!response) {
+                if (currentLevel === 'beginner') {
+                    response = `Das ist eine interessante Frage! 
+
+Lass mich dir helfen zu verstehen, wie Suchmaschinen mit politischen Themen funktionieren.
+
+Das Wichtigste, was du dir merken solltest:
+• Suchergebnisse sind basierend auf deinem Verlauf personalisiert
+• Verschiedene Menschen sehen verschiedene Ergebnisse
+• Dies kann "Blasen" erzeugen, in denen du nur eine Perspektive siehst
+
+Probiere eine der Folgefragen oben, und ich erkläre es in einfachen Worten!`;
+                } else {
+                    response = `Deine Frage "${message}" berührt wichtige Aspekte der Such-Personalisierung.
+
+Wichtige Überlegungen:
+• Algorithmisches Ranking umfasst mehrere Optimierungsziele
+• Personalisierung interagiert mit Anfrage-Semantik und Nutzerverlauf
+• Empirische Evidenz deutet auf moderate Effekte auf politische Einstellungen hin
+• Normative Implikationen bleiben in der demokratischen Theorie umstritten
+
+Ich empfehle, die Folgefragen oben zu erkunden für detaillierte Analysen spezifischer Mechanismen und Implikationen.`;
+                }
+            }
+            
+            setTimeout(() => {
+                showTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage('bot', response);
+                }, 1500);
+            }, 300);
+        }
+
+        function addMessage(type, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'bot' ? 'S' : 'U';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.innerHTML = text;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message bot';
+            indicator.id = 'typingIndicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'S';
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message-content typing-indicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            
+            indicator.appendChild(avatar);
+            indicator.appendChild(typingDiv);
+            chatMessages.appendChild(indicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        // Initialize
+        updateInterface();
+    </script>
+</body>
+</html>
